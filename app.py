@@ -29,299 +29,258 @@ st.set_page_config(
 # ══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
 <style>
-/* ── Fonts ──────────────────────────────────────────────────────────────────── */
+/* ── Fonts ─────────────────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 html, body, [class*="css"] { font-family: 'Inter', system-ui, sans-serif !important; }
 
-/* ── App background ──────────────────────────────────────────────────────────── */
-.stApp,
-[data-testid="stAppViewContainer"],
-[data-testid="stMain"],
-section[data-testid="stMain"] > div {
-    background-color: #f1f5f9 !important;
-    color: #1f2937 !important;
-}
-.main .block-container { padding-top: 1.5rem; padding-bottom: 3rem; }
+/* ── Base ──────────────────────────────────────────────────────── */
+.stApp { background: #f1f5f9 !important; }
+.main .block-container { padding-top: 1.75rem !important; padding-bottom: 3rem !important; }
 
-/* ── Sidebar ────────────────────────────────────────────────────────────────── */
-[data-testid="stSidebar"],
+/* ── Sidebar shell ─────────────────────────────────────────────── */
 [data-testid="stSidebar"] > div:first-child {
-    background: linear-gradient(175deg, #1e1b4b 0%, #312e81 60%, #3730a3 100%) !important;
-    border-right: 1px solid #4338ca !important;
+    background: #0f172a !important;
+    border-right: 1px solid #1e293b !important;
 }
+
+/* ── Sidebar text ──────────────────────────────────────────────── */
 [data-testid="stSidebar"] .stMarkdown p,
 [data-testid="stSidebar"] .stMarkdown li,
 [data-testid="stSidebar"] label,
 [data-testid="stSidebar"] span:not([class*="hidden"]) {
-    color: #c7d2fe !important;
+    color: #94a3b8 !important;
 }
-[data-testid="stSidebar"] h1,
-[data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3,
-[data-testid="stSidebar"] h4 {
-    color: #ffffff !important;
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3, [data-testid="stSidebar"] h4 {
+    color: #f1f5f9 !important;
     letter-spacing: -0.01em;
 }
-[data-testid="stSidebar"] hr { border-color: #4338ca !important; margin: 0.6rem 0; }
+[data-testid="stSidebar"] hr { border-color: #1e293b !important; margin: 0.5rem 0; }
+
+/* ── Sidebar inputs ────────────────────────────────────────────── */
+[data-testid="stSidebar"] input {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+[data-testid="stSidebar"] [data-baseweb="base-input"] {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+/* ── Sidebar file uploader ─────────────────────────────────────── */
 [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
-    background: rgba(255,255,255,0.06) !important;
-    border: 1px dashed #6366f1 !important;
-    border-radius: 8px;
+    background: #1e293b !important;
+    border: 1px dashed #334155 !important;
+    border-radius: 8px !important;
 }
 [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] *,
 [data-testid="stSidebar"] [data-testid="stFileUploaderDropzoneInstructions"] * {
-    color: #a5b4fc !important;
+    color: #64748b !important;
 }
 [data-testid="stSidebar"] small,
-[data-testid="stSidebar"] [data-testid="stFileUploaderFileName"] {
-    color: #a5b4fc !important;
-}
+[data-testid="stSidebar"] [data-testid="stFileUploaderFileName"] { color: #94a3b8 !important; }
 
-/* ── BUTTONS ─────────────────────────────────────────────────────────────────── */
-button[kind="secondary"],
-button[kind="primary"],
-.stButton button,
-div[data-testid="stButton"] button,
-div[data-testid="stBaseButton-secondary"] button,
-div[data-testid="stBaseButton-primary"] button {
-    background-color: #4f46e5 !important;
-    color: #ffffff !important;
+/* ── Global buttons ────────────────────────────────────────────── */
+.stButton > button,
+div[data-testid="stBaseButton-secondary"] > button,
+div[data-testid="stBaseButton-primary"] > button,
+div[data-testid="stFormSubmitButton"] > button {
+    background: #2563eb !important;
+    color: #fff !important;
     border: none !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
     font-size: 0.875rem !important;
-    transition: background-color 0.15s ease, box-shadow 0.15s ease !important;
-    box-shadow: 0 1px 4px rgba(79, 70, 229, 0.3) !important;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25) !important;
+    transition: background 0.15s, box-shadow 0.15s !important;
 }
-.stButton button p, .stButton button span,
-div[data-testid="stButton"] button p, div[data-testid="stButton"] button span,
-div[data-testid="stBaseButton-secondary"] button p, div[data-testid="stBaseButton-secondary"] button span,
-div[data-testid="stBaseButton-primary"] button p, div[data-testid="stBaseButton-primary"] button span {
-    color: #ffffff !important;
-}
-button[kind="secondary"]:hover, button[kind="primary"]:hover,
-.stButton button:hover,
-div[data-testid="stButton"] button:hover,
-div[data-testid="stBaseButton-secondary"] button:hover,
-div[data-testid="stBaseButton-primary"] button:hover {
-    background-color: #4338ca !important;
-    color: #ffffff !important;
-    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4) !important;
-}
-button[kind="secondary"]:active, button[kind="primary"]:active,
-.stButton button:active, div[data-testid="stButton"] button:active {
-    background-color: #3730a3 !important;
-    color: #ffffff !important;
-    box-shadow: none !important;
+.stButton > button p, .stButton > button span,
+div[data-testid="stFormSubmitButton"] > button p,
+div[data-testid="stFormSubmitButton"] > button span { color: #fff !important; }
+.stButton > button:hover,
+div[data-testid="stFormSubmitButton"] > button:hover {
+    background: #1d4ed8 !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
 }
 
-/* ── Sidebar buttons ────────────────────────────────────────────────────────── */
-[data-testid="stSidebar"] .stButton button,
-[data-testid="stSidebar"] div[data-testid="stButton"] button,
-[data-testid="stSidebar"] div[data-testid="stBaseButton-secondary"] button {
-    background-color: rgba(99, 102, 241, 0.22) !important;
-    color: #c7d2fe !important;
-    border: 1px solid rgba(129, 140, 248, 0.35) !important;
+/* ── Sidebar buttons ───────────────────────────────────────────── */
+[data-testid="stSidebar"] .stButton > button,
+[data-testid="stSidebar"] div[data-testid="stFormSubmitButton"] > button {
+    background: rgba(37, 99, 235, 0.12) !important;
+    color: #93c5fd !important;
+    border: 1px solid rgba(37, 99, 235, 0.22) !important;
     box-shadow: none !important;
 }
-[data-testid="stSidebar"] .stButton button p,
-[data-testid="stSidebar"] .stButton button span,
-[data-testid="stSidebar"] div[data-testid="stButton"] button p,
-[data-testid="stSidebar"] div[data-testid="stButton"] button span { color: #c7d2fe !important; }
-[data-testid="stSidebar"] .stButton button:hover,
-[data-testid="stSidebar"] div[data-testid="stButton"] button:hover,
-[data-testid="stSidebar"] div[data-testid="stBaseButton-secondary"] button:hover {
-    background-color: rgba(99, 102, 241, 0.42) !important;
-    color: #ffffff !important;
-    border-color: rgba(129, 140, 248, 0.65) !important;
+[data-testid="stSidebar"] .stButton > button p,
+[data-testid="stSidebar"] .stButton > button span,
+[data-testid="stSidebar"] div[data-testid="stFormSubmitButton"] > button p,
+[data-testid="stSidebar"] div[data-testid="stFormSubmitButton"] > button span { color: #93c5fd !important; }
+[data-testid="stSidebar"] .stButton > button:hover,
+[data-testid="stSidebar"] div[data-testid="stFormSubmitButton"] > button:hover {
+    background: rgba(37, 99, 235, 0.28) !important;
+    color: #bfdbfe !important;
+    border-color: rgba(37, 99, 235, 0.45) !important;
 }
-[data-testid="stSidebar"] .stButton button:hover p,
-[data-testid="stSidebar"] .stButton button:hover span,
-[data-testid="stSidebar"] div[data-testid="stButton"] button:hover p,
-[data-testid="stSidebar"] div[data-testid="stButton"] button:hover span { color: #ffffff !important; }
+[data-testid="stSidebar"] .stButton > button:hover p,
+[data-testid="stSidebar"] .stButton > button:hover span,
+[data-testid="stSidebar"] div[data-testid="stFormSubmitButton"] > button:hover p,
+[data-testid="stSidebar"] div[data-testid="stFormSubmitButton"] > button:hover span { color: #bfdbfe !important; }
 
-/* ── Danger button ───────────────────────────────────────────────────────────── */
-.danger-btn .stButton button, .danger-btn div[data-testid="stButton"] button {
-    background-color: rgba(220, 38, 38, 0.1) !important;
+/* ── Danger button ─────────────────────────────────────────────── */
+.danger-btn .stButton > button {
+    background: rgba(220, 38, 38, 0.08) !important;
     color: #fca5a5 !important;
-    border: 1px solid rgba(220, 38, 38, 0.25) !important;
+    border: 1px solid rgba(220, 38, 38, 0.18) !important;
     box-shadow: none !important;
 }
-.danger-btn .stButton button p, .danger-btn .stButton button span,
-.danger-btn div[data-testid="stButton"] button p, .danger-btn div[data-testid="stButton"] button span {
-    color: #fca5a5 !important;
-}
-.danger-btn .stButton button:hover, .danger-btn div[data-testid="stButton"] button:hover {
-    background-color: rgba(220, 38, 38, 0.28) !important;
-    color: #ffffff !important;
-    border-color: rgba(220, 38, 38, 0.55) !important;
-}
-.danger-btn .stButton button:hover p, .danger-btn .stButton button:hover span,
-.danger-btn div[data-testid="stButton"] button:hover p, .danger-btn div[data-testid="stButton"] button:hover span {
-    color: #ffffff !important;
+.danger-btn .stButton > button p,
+.danger-btn .stButton > button span { color: #fca5a5 !important; }
+.danger-btn .stButton > button:hover {
+    background: rgba(220, 38, 38, 0.22) !important;
+    color: #fee2e2 !important;
+    border-color: rgba(220, 38, 38, 0.45) !important;
 }
 
-/* ── Metric cards ────────────────────────────────────────────────────────────── */
+/* ── Metric cards ──────────────────────────────────────────────── */
 [data-testid="stMetric"] {
-    background-color: #ffffff !important;
-    border: 1px solid #e0e7ff !important;
-    border-left: 5px solid #4f46e5 !important;
+    background: #fff !important;
+    border: 1px solid #e2e8f0 !important;
     border-radius: 12px !important;
     padding: 1.25rem 1.5rem 1rem !important;
-    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.07) !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
 }
-[data-testid="stMetricLabel"],
-[data-testid="stMetricLabel"] p, [data-testid="stMetricLabel"] span,
-[data-testid="stMetricLabel"] div, [data-testid="stMetricLabel"] label {
-    color: #6366f1 !important;
-    font-size: 0.72rem !important;
+[data-testid="stMetricLabel"] * {
+    color: #64748b !important;
+    font-size: 0.7rem !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.09em !important;
 }
-[data-testid="stMetricValue"],
-[data-testid="stMetricValue"] p, [data-testid="stMetricValue"] span,
-[data-testid="stMetricValue"] div {
-    color: #1f2937 !important;
+[data-testid="stMetricValue"] * {
+    color: #0f172a !important;
     font-size: 2rem !important;
     font-weight: 700 !important;
     letter-spacing: -0.02em !important;
 }
 
-/* ── Dashboard hero header ───────────────────────────────────────────────────── */
-.dash-header {
-    background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
+/* ── Dashboard hero ────────────────────────────────────────────── */
+.hero {
+    background: #0f172a;
+    border: 1px solid #1e293b;
     border-radius: 16px;
-    padding: 1.5rem 2rem;
-    margin-bottom: 1.25rem;
+    padding: 2rem 2.5rem;
+    margin-bottom: 1.5rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 6px 28px rgba(55, 48, 163, 0.25);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
-.dash-month {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: #ffffff;
-    letter-spacing: -0.02em;
-}
-.dash-mtd-label {
+.hero-eyebrow {
     font-size: 0.68rem;
     font-weight: 700;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #a5b4fc;
-    margin-top: 0.75rem;
+    color: #38bdf8;
+    margin-bottom: 0.4rem;
 }
-.dash-mtd-value {
-    font-size: 2.4rem;
+.hero-value {
+    font-size: 3.2rem;
     font-weight: 800;
-    color: #ffffff;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-    margin-top: 0.1rem;
+    color: #f1f5f9;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin-bottom: 0.2rem;
 }
-.dash-right { text-align: right; }
-.dash-day-label {
+.hero-sub {
+    font-size: 0.8rem;
+    color: #475569;
+}
+.hero-right { text-align: right; }
+.hero-day {
     font-size: 0.78rem;
-    color: #c7d2fe;
-    margin-bottom: 0.55rem;
+    color: #475569;
+    margin-bottom: 0.6rem;
 }
-.dash-progress-wrap {
-    width: 220px;
-    height: 8px;
-    background: rgba(255,255,255,0.15);
+.hero-bar-wrap {
+    width: 200px;
+    height: 5px;
+    background: #1e293b;
     border-radius: 99px;
     overflow: hidden;
     margin-left: auto;
 }
-.dash-progress-fill {
+.hero-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #818cf8, #c7d2fe);
+    background: linear-gradient(90deg, #2563eb, #38bdf8);
     border-radius: 99px;
 }
 
-/* ── Model card (2-column grid) ──────────────────────────────────────────────── */
+/* ── Model cards ───────────────────────────────────────────────── */
 .model-card {
-    background: #ffffff;
+    background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 1.2rem 1.4rem 0.95rem;
-    margin-bottom: 0.35rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    transition: box-shadow 0.18s ease, border-color 0.18s ease;
-    min-height: 115px;
+    border-radius: 12px;
+    padding: 1.25rem 1.4rem 1rem;
+    margin-bottom: 0.4rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    min-height: 112px;
 }
 .model-card:hover {
-    box-shadow: 0 6px 22px rgba(79,70,229,0.13);
-    border-color: #c7d2fe;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.1);
+    border-color: #93c5fd;
 }
-.mc-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 0.3rem;
-}
-.mc-name {
-    font-weight: 700;
-    color: #1e1b4b;
-    font-size: 0.9rem;
-}
-.mc-total {
-    font-size: 1.85rem;
-    font-weight: 800;
-    color: #4f46e5;
-    letter-spacing: -0.025em;
-    line-height: 1.05;
-    margin-bottom: 0.3rem;
-}
-.mc-desc {
-    font-size: 0.7rem;
-    color: #9ca3af;
-    line-height: 1.4;
-}
-.model-default-badge {
-    display: inline-block;
-    background: #ede9fe;
-    color: #5b21b6;
-    font-size: 0.6rem;
+.mc-eyebrow {
+    font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+    color: #94a3b8;
+    margin-bottom: 0.2rem;
+}
+.mc-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 0.25rem;
+}
+.mc-desc {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+.mc-badge {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
     padding: 2px 7px;
     border-radius: 99px;
     vertical-align: middle;
+    margin-left: 6px;
 }
 
-/* ── Main text ───────────────────────────────────────────────────────────────── */
-.main h1, .main h2, .main h3, .main h4,
-[data-testid="stMain"] h1,
-[data-testid="stMain"] h2,
-[data-testid="stMain"] h3 {
-    color: #1e1b4b !important;
-}
-[data-testid="stMain"] p,
-[data-testid="stMain"] label,
-[data-testid="stMain"] li {
-    color: #374151 !important;
-}
+/* ── Main headings ─────────────────────────────────────────────── */
+[data-testid="stMain"] h1, [data-testid="stMain"] h2,
+[data-testid="stMain"] h3, [data-testid="stMain"] h4 { color: #0f172a !important; }
+[data-testid="stMain"] p, [data-testid="stMain"] li { color: #475569 !important; }
 
-/* ── Expander ────────────────────────────────────────────────────────────────── */
+/* ── Expander ──────────────────────────────────────────────────── */
 [data-testid="stExpander"] {
-    background-color: #ffffff !important;
+    background: #fff !important;
     border: 1px solid #e2e8f0 !important;
     border-radius: 10px !important;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
 }
-[data-testid="stExpander"] summary,
-[data-testid="stExpander"] summary p,
-[data-testid="stExpander"] summary span {
-    font-weight: 600 !important;
-    color: #334155 !important;
-    font-size: 0.92rem;
-}
+[data-testid="stExpander"] summary * { color: #334155 !important; font-weight: 600 !important; }
 
-/* ── Divider ─────────────────────────────────────────────────────────────────── */
+/* ── HR ────────────────────────────────────────────────────────── */
 hr { border-color: #e2e8f0 !important; }
 </style>
 """, unsafe_allow_html=True)
@@ -911,24 +870,34 @@ with st.sidebar:
         st.caption(f"Last entry: {last_row['date'].strftime('%b %d, %Y')} · ${last_row['spend']:,.0f}")
     st.markdown("---")
 
-    # ── Daily spend entry ──────────────────────────────────────────────────────
-    st.markdown("### 📅 Enter Spend")
-    entry_date   = st.date_input("Date", value=today - timedelta(days=1), max_value=today)
-    entry_amount = st.number_input("Amount ($)", min_value=0.0, step=100.0, format="%.2f",
-                                   key="entry_amount")
-    if st.button("💾 Save", use_container_width=True, key="btn_save_spend"):
-        if entry_amount > 0:
-            if _as_configured():
+    # ── Flash message (shown after save/import) ───────────────────────────────
+    if st.session_state.get("_flash"):
+        ftype, fmsg = st.session_state._flash
+        if ftype == "success":   st.success(fmsg)
+        elif ftype == "error":   st.error(fmsg)
+        else:                    st.warning(fmsg)
+        st.session_state._flash = None
+
+    # ── Daily spend entry (form — Enter key submits) ───────────────────────────
+    st.markdown("### Enter Spend")
+    with st.form("daily_entry", clear_on_submit=True):
+        entry_date   = st.date_input("Date", value=today - timedelta(days=1), max_value=today)
+        entry_amount = st.number_input("Amount ($)", min_value=0.0, step=100.0, format="%.2f")
+        if st.form_submit_button("💾 Save Entry", use_container_width=True):
+            if entry_amount <= 0:
+                st.session_state._flash = ("error", "Enter an amount greater than $0.")
+                st.rerun()
+            elif not _as_configured():
+                st.session_state._flash = ("warning", "Backend not configured — see Setup below.")
+                st.rerun()
+            else:
                 try:
                     save_spend_entry(entry_date.strftime("%Y-%m-%d"), entry_amount)
-                    st.success(f"Saved ${entry_amount:,.2f} for {entry_date}")
+                    st.session_state._flash = ("success", f"Saved ${entry_amount:,.0f} for {entry_date.strftime('%b %d')}")
                     st.rerun()
                 except Exception as exc:
-                    st.error(f"Save failed: {exc}")
-            else:
-                st.warning("Apps Script not configured — see Setup Required below.")
-        else:
-            st.warning("Enter an amount greater than $0.")
+                    st.session_state._flash = ("error", f"Save failed: {exc}")
+                    st.rerun()
 
     st.markdown("---")
 
@@ -948,10 +917,10 @@ with st.sidebar:
                         if _as_configured():
                             bulk_save_history(new_entries)
                             st.session_state.uploader_counter += 1
-                            st.success(f"Imported {len(new_entries)} records.")
+                            st.session_state._flash = ("success", f"Imported {len(new_entries)} records.")
                             st.rerun()
                         else:
-                            st.warning("Apps Script not configured — see Setup Required below.")
+                            st.warning("Backend not configured — see Setup below.")
                     else:
                         st.error("No valid date/spend data found in file.")
                 except Exception as exc:
@@ -976,7 +945,7 @@ with st.sidebar:
                             try:
                                 clear_all_data()
                                 st.session_state.confirm_clear = False
-                                st.success("All data cleared.")
+                                st.session_state._flash = ("success", "All data cleared.")
                                 st.rerun()
                             except Exception as exc:
                                 st.error(f"Clear failed: {exc}")
@@ -1025,7 +994,7 @@ if st.session_state.selected_model is None:
             padding:2.5rem 2rem;text-align:center;
             box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:1rem">
   <div style="font-size:2.5rem;margin-bottom:0.5rem">📊</div>
-  <div style="font-size:1.2rem;font-weight:700;color:#1e1b4b;margin-bottom:0.4rem">{month_label}</div>
+  <div style="font-size:1.2rem;font-weight:700;color:#0f172a;margin-bottom:0.4rem">{month_label}</div>
   <div style="font-size:0.875rem;color:#6b7280;line-height:1.6">
     Upload historical data via <strong>Historical Upload</strong> in the sidebar,<br>
     or enter a day's spend to get started.
@@ -1035,18 +1004,18 @@ if st.session_state.selected_model is None:
         days_total = calendar.monthrange(year, month)[1]
         pct = min(100, int(today.day / days_total * 100))
 
-        # ── Hero header ───────────────────────────────────────────────────────
+        # ── Hero ──────────────────────────────────────────────────────────────
         st.markdown(f"""
-<div class="dash-header">
+<div class="hero">
   <div>
-    <div class="dash-month">{month_label}</div>
-    <div class="dash-mtd-label">MTD Actual</div>
-    <div class="dash-mtd-value">${actual_mtd:,.0f}</div>
+    <div class="hero-eyebrow">{month_label}</div>
+    <div class="hero-value">${actual_mtd:,.0f}</div>
+    <div class="hero-sub">MTD Actual spend</div>
   </div>
-  <div class="dash-right">
-    <div class="dash-day-label">Day {today.day} of {days_total} &nbsp;·&nbsp; {pct}% through the month</div>
-    <div class="dash-progress-wrap">
-      <div class="dash-progress-fill" style="width:{pct}%"></div>
+  <div class="hero-right">
+    <div class="hero-day">Day {today.day} of {days_total} &nbsp;·&nbsp; {pct}% through the month</div>
+    <div class="hero-bar-wrap">
+      <div class="hero-bar-fill" style="width:{pct}%"></div>
     </div>
   </div>
 </div>""", unsafe_allow_html=True)
@@ -1062,12 +1031,12 @@ if st.session_state.selected_model is None:
                     continue
                 key, label = model_list[idx]
                 total = model_totals.get(key, 0.0)
-                badge = '<span class="model-default-badge">Default</span>' if key == "dod_chain" else ""
+                badge = '<span class="mc-badge">Default</span>' if key == "dod_chain" else ""
                 with col:
                     st.markdown(f"""
 <div class="model-card">
-  <div class="mc-header"><span class="mc-name">{label}</span>{badge}</div>
-  <div class="mc-total">${total:,.0f}</div>
+  <div class="mc-eyebrow">{label}{badge}</div>
+  <div class="mc-value">${total:,.0f}</div>
   <div class="mc-desc">{MODEL_DESCRIPTIONS[key]}</div>
 </div>""", unsafe_allow_html=True)
                     if st.button("View details →", key=f"drill_{key}", use_container_width=True):
