@@ -30,10 +30,10 @@ st.set_page_config(
 st.markdown("""
 <style>
 /* ── Fonts ──────────────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 html, body, [class*="css"] { font-family: 'Inter', system-ui, sans-serif !important; }
 
-/* ── App background — force light even if OS/Streamlit is in dark mode ──────── */
+/* ── App background ──────────────────────────────────────────────────────────── */
 .stApp,
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"],
@@ -41,7 +41,7 @@ section[data-testid="stMain"] > div {
     background-color: #f1f5f9 !important;
     color: #1f2937 !important;
 }
-.main .block-container { padding-top: 2rem; padding-bottom: 3rem; }
+.main .block-container { padding-top: 1.5rem; padding-bottom: 3rem; }
 
 /* ── Sidebar ────────────────────────────────────────────────────────────────── */
 [data-testid="stSidebar"],
@@ -84,40 +84,33 @@ button[kind="primary"],
 div[data-testid="stButton"] button,
 div[data-testid="stBaseButton-secondary"] button,
 div[data-testid="stBaseButton-primary"] button {
-    background-color: #2563eb !important;
+    background-color: #4f46e5 !important;
     color: #ffffff !important;
     border: none !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
     font-size: 0.875rem !important;
     transition: background-color 0.15s ease, box-shadow 0.15s ease !important;
-    box-shadow: 0 1px 4px rgba(37, 99, 235, 0.35) !important;
+    box-shadow: 0 1px 4px rgba(79, 70, 229, 0.3) !important;
 }
-.stButton button p,
-.stButton button span,
-div[data-testid="stButton"] button p,
-div[data-testid="stButton"] button span,
-div[data-testid="stBaseButton-secondary"] button p,
-div[data-testid="stBaseButton-secondary"] button span,
-div[data-testid="stBaseButton-primary"] button p,
-div[data-testid="stBaseButton-primary"] button span {
+.stButton button p, .stButton button span,
+div[data-testid="stButton"] button p, div[data-testid="stButton"] button span,
+div[data-testid="stBaseButton-secondary"] button p, div[data-testid="stBaseButton-secondary"] button span,
+div[data-testid="stBaseButton-primary"] button p, div[data-testid="stBaseButton-primary"] button span {
     color: #ffffff !important;
 }
-button[kind="secondary"]:hover,
-button[kind="primary"]:hover,
+button[kind="secondary"]:hover, button[kind="primary"]:hover,
 .stButton button:hover,
 div[data-testid="stButton"] button:hover,
 div[data-testid="stBaseButton-secondary"] button:hover,
 div[data-testid="stBaseButton-primary"] button:hover {
-    background-color: #1d4ed8 !important;
+    background-color: #4338ca !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45) !important;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4) !important;
 }
-button[kind="secondary"]:active,
-button[kind="primary"]:active,
-.stButton button:active,
-div[data-testid="stButton"] button:active {
-    background-color: #1e40af !important;
+button[kind="secondary"]:active, button[kind="primary"]:active,
+.stButton button:active, div[data-testid="stButton"] button:active {
+    background-color: #3730a3 !important;
     color: #ffffff !important;
     box-shadow: none !important;
 }
@@ -134,9 +127,7 @@ div[data-testid="stButton"] button:active {
 [data-testid="stSidebar"] .stButton button p,
 [data-testid="stSidebar"] .stButton button span,
 [data-testid="stSidebar"] div[data-testid="stButton"] button p,
-[data-testid="stSidebar"] div[data-testid="stButton"] button span {
-    color: #c7d2fe !important;
-}
+[data-testid="stSidebar"] div[data-testid="stButton"] button span { color: #c7d2fe !important; }
 [data-testid="stSidebar"] .stButton button:hover,
 [data-testid="stSidebar"] div[data-testid="stButton"] button:hover,
 [data-testid="stSidebar"] div[data-testid="stBaseButton-secondary"] button:hover {
@@ -147,34 +138,26 @@ div[data-testid="stButton"] button:active {
 [data-testid="stSidebar"] .stButton button:hover p,
 [data-testid="stSidebar"] .stButton button:hover span,
 [data-testid="stSidebar"] div[data-testid="stButton"] button:hover p,
-[data-testid="stSidebar"] div[data-testid="stButton"] button:hover span {
-    color: #ffffff !important;
-}
+[data-testid="stSidebar"] div[data-testid="stButton"] button:hover span { color: #ffffff !important; }
 
 /* ── Danger button ───────────────────────────────────────────────────────────── */
-.danger-btn .stButton button,
-.danger-btn div[data-testid="stButton"] button {
-    background-color: rgba(220, 38, 38, 0.12) !important;
+.danger-btn .stButton button, .danger-btn div[data-testid="stButton"] button {
+    background-color: rgba(220, 38, 38, 0.1) !important;
     color: #fca5a5 !important;
-    border: 1px solid rgba(220, 38, 38, 0.28) !important;
+    border: 1px solid rgba(220, 38, 38, 0.25) !important;
     box-shadow: none !important;
 }
-.danger-btn .stButton button p,
-.danger-btn .stButton button span,
-.danger-btn div[data-testid="stButton"] button p,
-.danger-btn div[data-testid="stButton"] button span {
+.danger-btn .stButton button p, .danger-btn .stButton button span,
+.danger-btn div[data-testid="stButton"] button p, .danger-btn div[data-testid="stButton"] button span {
     color: #fca5a5 !important;
 }
-.danger-btn .stButton button:hover,
-.danger-btn div[data-testid="stButton"] button:hover {
-    background-color: rgba(220, 38, 38, 0.3) !important;
+.danger-btn .stButton button:hover, .danger-btn div[data-testid="stButton"] button:hover {
+    background-color: rgba(220, 38, 38, 0.28) !important;
     color: #ffffff !important;
     border-color: rgba(220, 38, 38, 0.55) !important;
 }
-.danger-btn .stButton button:hover p,
-.danger-btn .stButton button:hover span,
-.danger-btn div[data-testid="stButton"] button:hover p,
-.danger-btn div[data-testid="stButton"] button:hover span {
+.danger-btn .stButton button:hover p, .danger-btn .stButton button:hover span,
+.danger-btn div[data-testid="stButton"] button:hover p, .danger-btn div[data-testid="stButton"] button:hover span {
     color: #ffffff !important;
 }
 
@@ -185,13 +168,11 @@ div[data-testid="stButton"] button:active {
     border-left: 5px solid #4f46e5 !important;
     border-radius: 12px !important;
     padding: 1.25rem 1.5rem 1rem !important;
-    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.08) !important;
+    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.07) !important;
 }
 [data-testid="stMetricLabel"],
-[data-testid="stMetricLabel"] p,
-[data-testid="stMetricLabel"] span,
-[data-testid="stMetricLabel"] div,
-[data-testid="stMetricLabel"] label {
+[data-testid="stMetricLabel"] p, [data-testid="stMetricLabel"] span,
+[data-testid="stMetricLabel"] div, [data-testid="stMetricLabel"] label {
     color: #6366f1 !important;
     font-size: 0.72rem !important;
     font-weight: 700 !important;
@@ -199,8 +180,7 @@ div[data-testid="stButton"] button:active {
     letter-spacing: 0.09em !important;
 }
 [data-testid="stMetricValue"],
-[data-testid="stMetricValue"] p,
-[data-testid="stMetricValue"] span,
+[data-testid="stMetricValue"] p, [data-testid="stMetricValue"] span,
 [data-testid="stMetricValue"] div {
     color: #1f2937 !important;
     font-size: 2rem !important;
@@ -208,41 +188,108 @@ div[data-testid="stButton"] button:active {
     letter-spacing: -0.02em !important;
 }
 
-/* ── Model card rows ─────────────────────────────────────────────────────────── */
-.model-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 1rem 1.25rem;
-    margin-bottom: 0.5rem;
+/* ── Dashboard hero header ───────────────────────────────────────────────────── */
+.dash-header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.25rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-    transition: box-shadow 0.15s ease;
+    box-shadow: 0 6px 28px rgba(55, 48, 163, 0.25);
 }
-.model-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.1); }
-.model-card-name {
-    font-weight: 600;
-    color: #1e1b4b;
-    font-size: 1rem;
+.dash-month {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.02em;
 }
-.model-card-total {
-    font-size: 1.35rem;
+.dash-mtd-label {
+    font-size: 0.68rem;
     font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #a5b4fc;
+    margin-top: 0.75rem;
+}
+.dash-mtd-value {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-top: 0.1rem;
+}
+.dash-right { text-align: right; }
+.dash-day-label {
+    font-size: 0.78rem;
+    color: #c7d2fe;
+    margin-bottom: 0.55rem;
+}
+.dash-progress-wrap {
+    width: 220px;
+    height: 8px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-left: auto;
+}
+.dash-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #818cf8, #c7d2fe);
+    border-radius: 99px;
+}
+
+/* ── Model card (2-column grid) ──────────────────────────────────────────────── */
+.model-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.2rem 1.4rem 0.95rem;
+    margin-bottom: 0.35rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: box-shadow 0.18s ease, border-color 0.18s ease;
+    min-height: 115px;
+}
+.model-card:hover {
+    box-shadow: 0 6px 22px rgba(79,70,229,0.13);
+    border-color: #c7d2fe;
+}
+.mc-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0.3rem;
+}
+.mc-name {
+    font-weight: 700;
+    color: #1e1b4b;
+    font-size: 0.9rem;
+}
+.mc-total {
+    font-size: 1.85rem;
+    font-weight: 800;
     color: #4f46e5;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+    margin-bottom: 0.3rem;
+}
+.mc-desc {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    line-height: 1.4;
 }
 .model-default-badge {
     display: inline-block;
     background: #ede9fe;
     color: #5b21b6;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    padding: 2px 8px;
+    padding: 2px 7px;
     border-radius: 99px;
-    margin-left: 8px;
     vertical-align: middle;
 }
 
@@ -332,8 +379,23 @@ def _as_get(action: str) -> dict:
 
 def _as_post(action: str, **kwargs) -> None:
     payload = {"action": action, "secret": st.secrets.get("AS_SECRET", ""), **kwargs}
-    r = requests.post(st.secrets.get("AS_URL", ""), json=payload, timeout=20)
-    r.raise_for_status()
+    try:
+        r = requests.post(st.secrets.get("AS_URL", ""), json=payload, timeout=30)
+    except requests.exceptions.Timeout:
+        raise RuntimeError("Apps Script timed out. Try again in a moment.")
+    except requests.exceptions.ConnectionError as exc:
+        raise RuntimeError(f"Could not reach Apps Script: {exc}")
+    if not r.ok:
+        snippet = r.text[:300] if r.text else "(empty response)"
+        raise RuntimeError(
+            f"Apps Script returned HTTP {r.status_code}. Response: {snippet}"
+        )
+    try:
+        body = r.json()
+        if isinstance(body, dict) and body.get("error"):
+            raise RuntimeError(f"Apps Script error: {body['error']}")
+    except (ValueError, KeyError):
+        pass
 
 
 @st.cache_data(ttl=30)
@@ -562,11 +624,16 @@ def project_dod_chain(df: pd.DataFrame, params: dict, today: date) -> pd.DataFra
     last_val = None
     last_dow = None
 
-    # Prime anchor: last actual in full history before current month
+    # Prime anchor: last actual in full history before current month.
+    # Skip stale anchors (> 60 days before month start) to avoid compounding errors
+    # when data has large gaps — fall back to DoW averages instead.
     prior = df[df["date"] < pd.Timestamp(date(year, month, 1))].sort_values("date")
     if not prior.empty:
-        last_val = prior.iloc[-1]["spend"]
-        last_dow = prior.iloc[-1]["dow"]
+        anchor_date = prior.iloc[-1]["date"]
+        month_start = pd.Timestamp(date(year, month, 1))
+        if (month_start - anchor_date).days <= 60:
+            last_val = prior.iloc[-1]["spend"]
+            last_dow = prior.iloc[-1]["dow"]
 
     for d in all_days:
         dow = d.strftime("%a")
@@ -839,6 +906,9 @@ if has_data:
 # ══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.markdown("## 📊 PPC Spend Projector")
+    if has_data:
+        last_row = df.sort_values("date").iloc[-1]
+        st.caption(f"Last entry: {last_row['date'].strftime('%b %d, %Y')} · ${last_row['spend']:,.0f}")
     st.markdown("---")
 
     # ── Daily spend entry ──────────────────────────────────────────────────────
@@ -849,11 +919,14 @@ with st.sidebar:
     if st.button("💾 Save", use_container_width=True, key="btn_save_spend"):
         if entry_amount > 0:
             if _as_configured():
-                save_spend_entry(entry_date.strftime("%Y-%m-%d"), entry_amount)
-                st.success(f"Saved ${entry_amount:,.2f} for {entry_date}")
-                st.rerun()
+                try:
+                    save_spend_entry(entry_date.strftime("%Y-%m-%d"), entry_amount)
+                    st.success(f"Saved ${entry_amount:,.2f} for {entry_date}")
+                    st.rerun()
+                except Exception as exc:
+                    st.error(f"Save failed: {exc}")
             else:
-                st.warning("Google Apps Script not configured — data won't persist. See Setup Required in the sidebar.")
+                st.warning("Apps Script not configured — see Setup Required below.")
         else:
             st.warning("Enter an amount greater than $0.")
 
@@ -878,11 +951,11 @@ with st.sidebar:
                             st.success(f"Imported {len(new_entries)} records.")
                             st.rerun()
                         else:
-                            st.warning("Google Apps Script not configured — data won't persist. See Setup Required in the sidebar.")
+                            st.warning("Apps Script not configured — see Setup Required below.")
                     else:
                         st.error("No valid date/spend data found in file.")
                 except Exception as exc:
-                    st.error(f"Upload failed: {exc}")
+                    st.error(f"Import failed: {exc}")
 
         st.markdown("---")
         st.markdown("**⚠ Danger Zone**")
@@ -900,10 +973,18 @@ with st.sidebar:
                 if st.button("Confirm", use_container_width=True, key="btn_clear_confirm"):
                     if confirm_text.strip() == "CLEAR":
                         if _as_configured():
-                            clear_all_data()
-                        st.session_state.confirm_clear = False
-                        st.success("All data cleared.")
-                        st.rerun()
+                            try:
+                                clear_all_data()
+                                st.session_state.confirm_clear = False
+                                st.success("All data cleared.")
+                                st.rerun()
+                            except Exception as exc:
+                                st.error(f"Clear failed: {exc}")
+                                st.session_state.confirm_clear = False
+                        else:
+                            st.session_state.confirm_clear = False
+                            st.info("No backend configured — nothing to clear.")
+                            st.rerun()
                     else:
                         st.error("Type CLEAR exactly.")
             with c2:
@@ -937,46 +1018,62 @@ AS_SECRET = "your-chosen-api-secret"
 if st.session_state.selected_model is None:
 
     month_label = today.strftime("%B %Y")
-    st.markdown(f"## 📅 {month_label}")
 
     if not has_data:
-        st.info(
-            "No spend data loaded yet.\n\n"
-            "Upload your historical data using **Historical Upload** in the sidebar, "
-            "or enter a day's spend above."
-        )
+        st.markdown(f"""
+<div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;
+            padding:2.5rem 2rem;text-align:center;
+            box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:1rem">
+  <div style="font-size:2.5rem;margin-bottom:0.5rem">📊</div>
+  <div style="font-size:1.2rem;font-weight:700;color:#1e1b4b;margin-bottom:0.4rem">{month_label}</div>
+  <div style="font-size:0.875rem;color:#6b7280;line-height:1.6">
+    Upload historical data via <strong>Historical Upload</strong> in the sidebar,<br>
+    or enter a day's spend to get started.
+  </div>
+</div>""", unsafe_allow_html=True)
     else:
-        col_a, col_b = st.columns([3, 1])
-        with col_a:
-            st.markdown(f"**MTD Actual: ${actual_mtd:,.0f}**")
-        with col_b:
-            days_gone   = sum(1 for d in [date(year, month, x) for x in range(1, today.day)] if True)
-            days_total  = calendar.monthrange(year, month)[1]
-            st.caption(f"Day {today.day} of {days_total}")
+        days_total = calendar.monthrange(year, month)[1]
+        pct = min(100, int(today.day / days_total * 100))
 
-        st.markdown("---")
+        # ── Hero header ───────────────────────────────────────────────────────
+        st.markdown(f"""
+<div class="dash-header">
+  <div>
+    <div class="dash-month">{month_label}</div>
+    <div class="dash-mtd-label">MTD Actual</div>
+    <div class="dash-mtd-value">${actual_mtd:,.0f}</div>
+  </div>
+  <div class="dash-right">
+    <div class="dash-day-label">Day {today.day} of {days_total} &nbsp;·&nbsp; {pct}% through the month</div>
+    <div class="dash-progress-wrap">
+      <div class="dash-progress-fill" style="width:{pct}%"></div>
+    </div>
+  </div>
+</div>""", unsafe_allow_html=True)
+
         st.markdown("### Model Comparison — Projected Month Total")
 
-        for key, label in MODELS.items():
-            total = model_totals.get(key, 0.0)
-            is_default = key == "dod_chain"
-
-            badge = '<span class="model-default-badge">Default</span>' if is_default else ""
-            card_html = f"""
+        # ── 2-column card grid ────────────────────────────────────────────────
+        model_list = list(MODELS.items())
+        for row_start in range(0, len(model_list), 2):
+            c1, c2 = st.columns(2, gap="medium")
+            for col, idx in [(c1, row_start), (c2, row_start + 1)]:
+                if idx >= len(model_list):
+                    continue
+                key, label = model_list[idx]
+                total = model_totals.get(key, 0.0)
+                badge = '<span class="model-default-badge">Default</span>' if key == "dod_chain" else ""
+                with col:
+                    st.markdown(f"""
 <div class="model-card">
-  <div>
-    <span class="model-card-name">{label}</span>{badge}
-    <br><small style="color:#6b7280;font-size:0.78rem;">{MODEL_DESCRIPTIONS[key]}</small>
-  </div>
-  <span class="model-card-total">${total:,.0f}</span>
-</div>"""
-            st.markdown(card_html, unsafe_allow_html=True)
-
-            # Drill-down button positioned below each card
-            if st.button("View details →", key=f"drill_{key}", use_container_width=False):
-                st.session_state.selected_model = key
-                st.session_state.local_params   = {}
-                st.rerun()
+  <div class="mc-header"><span class="mc-name">{label}</span>{badge}</div>
+  <div class="mc-total">${total:,.0f}</div>
+  <div class="mc-desc">{MODEL_DESCRIPTIONS[key]}</div>
+</div>""", unsafe_allow_html=True)
+                    if st.button("View details →", key=f"drill_{key}", use_container_width=True):
+                        st.session_state.selected_model = key
+                        st.session_state.local_params   = {}
+                        st.rerun()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -986,13 +1083,15 @@ else:
     model_key  = st.session_state.selected_model
     model_name = MODELS[model_key]
 
-    if st.button("← Back to Dashboard", key="btn_back"):
-        st.session_state.selected_model = None
-        st.session_state.local_params   = {}
-        st.rerun()
-
-    st.markdown(f"## {model_name}")
-    st.caption(MODEL_DESCRIPTIONS[model_key])
+    back_col, title_col = st.columns([1, 5])
+    with back_col:
+        if st.button("← Back", key="btn_back", use_container_width=True):
+            st.session_state.selected_model = None
+            st.session_state.local_params   = {}
+            st.rerun()
+    with title_col:
+        st.markdown(f"## {model_name}")
+        st.caption(MODEL_DESCRIPTIONS[model_key])
     st.markdown("---")
 
     # ── Parameters ────────────────────────────────────────────────────────────
@@ -1057,12 +1156,15 @@ else:
     with col_save:
         if st.button("💾 Save Settings", use_container_width=True, key="btn_save_settings"):
             if _as_configured():
-                save_model_settings(model_key, new_p)
-                st.session_state.local_params[model_key] = {}
-                st.success("Settings saved for all users.")
-                st.rerun()
+                try:
+                    save_model_settings(model_key, new_p)
+                    st.session_state.local_params[model_key] = {}
+                    st.success("Settings saved for all users.")
+                    st.rerun()
+                except Exception as exc:
+                    st.error(f"Save failed: {exc}")
             else:
-                st.warning("Google Apps Script not configured — settings won't persist. See Setup Required in the sidebar.")
+                st.warning("Apps Script not configured — settings won't persist.")
     with col_reset:
         if st.button("Reset to Defaults", use_container_width=True, key="btn_reset"):
             if _as_configured():
