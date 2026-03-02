@@ -1,15 +1,17 @@
 """
-PPC Spend Projector — Streamlit Web Edition
-Three models: Adaptive DoW ★ · Same-DoW Avg · EMA Baseline
-Tailored for Google & Bing Search Ads.
+PPC Spend Projector — v2.0
+Six models · Shared persistent data · Daily entry
 """
 
 import calendar
+import json
+from datetime import date, timedelta
 from io import BytesIO
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import requests
 import streamlit as st
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -75,9 +77,7 @@ section[data-testid="stMain"] > div {
     color: #a5b4fc !important;
 }
 
-/* ── BUTTONS — cast-iron rules that survive theme switching ─────────────────── */
-
-/* 1. Every button on the page — base state */
+/* ── BUTTONS ─────────────────────────────────────────────────────────────────── */
 button[kind="secondary"],
 button[kind="primary"],
 .stButton button,
@@ -93,7 +93,6 @@ div[data-testid="stBaseButton-primary"] button {
     transition: background-color 0.15s ease, box-shadow 0.15s ease !important;
     box-shadow: 0 1px 4px rgba(37, 99, 235, 0.35) !important;
 }
-/* Force the text node inside buttons to be white (catches both p and span wrappers) */
 .stButton button p,
 .stButton button span,
 div[data-testid="stButton"] button p,
@@ -104,8 +103,6 @@ div[data-testid="stBaseButton-primary"] button p,
 div[data-testid="stBaseButton-primary"] button span {
     color: #ffffff !important;
 }
-
-/* 2. Hover */
 button[kind="secondary"]:hover,
 button[kind="primary"]:hover,
 .stButton button:hover,
@@ -116,32 +113,16 @@ div[data-testid="stBaseButton-primary"] button:hover {
     color: #ffffff !important;
     box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45) !important;
 }
-/* 3. Active (click) */
 button[kind="secondary"]:active,
 button[kind="primary"]:active,
 .stButton button:active,
-div[data-testid="stButton"] button:active,
-div[data-testid="stBaseButton-secondary"] button:active,
-div[data-testid="stBaseButton-primary"] button:active {
+div[data-testid="stButton"] button:active {
     background-color: #1e40af !important;
     color: #ffffff !important;
     box-shadow: none !important;
 }
-/* 4. Focus ring */
-button[kind="secondary"]:focus-visible,
-button[kind="primary"]:focus-visible,
-.stButton button:focus-visible,
-div[data-testid="stButton"] button:focus-visible,
-div[data-testid="stBaseButton-secondary"] button:focus-visible,
-div[data-testid="stBaseButton-primary"] button:focus-visible {
-    background-color: #2563eb !important;
-    color: #ffffff !important;
-    outline: 2px solid #93c5fd !important;
-    outline-offset: 2px !important;
-    box-shadow: none !important;
-}
 
-/* ── Sidebar buttons — translucent indigo layer on top of base rules ─────────── */
+/* ── Sidebar buttons ────────────────────────────────────────────────────────── */
 [data-testid="stSidebar"] .stButton button,
 [data-testid="stSidebar"] div[data-testid="stButton"] button,
 [data-testid="stSidebar"] div[data-testid="stBaseButton-secondary"] button {
@@ -162,7 +143,6 @@ div[data-testid="stBaseButton-primary"] button:focus-visible {
     background-color: rgba(99, 102, 241, 0.42) !important;
     color: #ffffff !important;
     border-color: rgba(129, 140, 248, 0.65) !important;
-    box-shadow: none !important;
 }
 [data-testid="stSidebar"] .stButton button:hover p,
 [data-testid="stSidebar"] .stButton button:hover span,
@@ -170,16 +150,10 @@ div[data-testid="stBaseButton-primary"] button:focus-visible {
 [data-testid="stSidebar"] div[data-testid="stButton"] button:hover span {
     color: #ffffff !important;
 }
-[data-testid="stSidebar"] .stButton button:active,
-[data-testid="stSidebar"] div[data-testid="stButton"] button:active {
-    background-color: rgba(99, 102, 241, 0.6) !important;
-    color: #ffffff !important;
-}
 
-/* ── Danger / Start Fresh button ─────────────────────────────────────────────── */
+/* ── Danger button ───────────────────────────────────────────────────────────── */
 .danger-btn .stButton button,
-.danger-btn div[data-testid="stButton"] button,
-.danger-btn div[data-testid="stBaseButton-secondary"] button {
+.danger-btn div[data-testid="stButton"] button {
     background-color: rgba(220, 38, 38, 0.12) !important;
     color: #fca5a5 !important;
     border: 1px solid rgba(220, 38, 38, 0.28) !important;
@@ -192,12 +166,10 @@ div[data-testid="stBaseButton-primary"] button:focus-visible {
     color: #fca5a5 !important;
 }
 .danger-btn .stButton button:hover,
-.danger-btn div[data-testid="stButton"] button:hover,
-.danger-btn div[data-testid="stBaseButton-secondary"] button:hover {
+.danger-btn div[data-testid="stButton"] button:hover {
     background-color: rgba(220, 38, 38, 0.3) !important;
     color: #ffffff !important;
     border-color: rgba(220, 38, 38, 0.55) !important;
-    box-shadow: none !important;
 }
 .danger-btn .stButton button:hover p,
 .danger-btn .stButton button:hover span,
@@ -205,13 +177,8 @@ div[data-testid="stBaseButton-primary"] button:focus-visible {
 .danger-btn div[data-testid="stButton"] button:hover span {
     color: #ffffff !important;
 }
-.danger-btn .stButton button:active,
-.danger-btn div[data-testid="stButton"] button:active {
-    background-color: rgba(220, 38, 38, 0.48) !important;
-    color: #ffffff !important;
-}
 
-/* ── Metric cards — force high contrast text regardless of theme ─────────────── */
+/* ── Metric cards ────────────────────────────────────────────────────────────── */
 [data-testid="stMetric"] {
     background-color: #ffffff !important;
     border: 1px solid #e0e7ff !important;
@@ -219,12 +186,7 @@ div[data-testid="stBaseButton-primary"] button:focus-visible {
     border-radius: 12px !important;
     padding: 1.25rem 1.5rem 1rem !important;
     box-shadow: 0 4px 16px rgba(79, 70, 229, 0.08) !important;
-    transition: box-shadow 0.2s ease;
 }
-[data-testid="stMetric"]:hover {
-    box-shadow: 0 6px 24px rgba(79, 70, 229, 0.15) !important;
-}
-/* Label — every possible nested element */
 [data-testid="stMetricLabel"],
 [data-testid="stMetricLabel"] p,
 [data-testid="stMetricLabel"] span,
@@ -236,7 +198,6 @@ div[data-testid="stBaseButton-primary"] button:focus-visible {
     text-transform: uppercase !important;
     letter-spacing: 0.09em !important;
 }
-/* Value — every possible nested element */
 [data-testid="stMetricValue"],
 [data-testid="stMetricValue"] p,
 [data-testid="stMetricValue"] span,
@@ -247,46 +208,45 @@ div[data-testid="stBaseButton-primary"] button:focus-visible {
     letter-spacing: -0.02em !important;
 }
 
-/* ── Page title elements ─────────────────────────────────────────────────────── */
-.page-title {
-    font-size: 1.75rem !important;
-    font-weight: 700 !important;
-    color: #1e1b4b !important;
-    margin: 0 0 0.25rem !important;
-    letter-spacing: -0.02em;
+/* ── Model card rows ─────────────────────────────────────────────────────────── */
+.model-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    transition: box-shadow 0.15s ease;
 }
-.page-badge {
+.model-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.1); }
+.model-card-name {
+    font-weight: 600;
+    color: #1e1b4b;
+    font-size: 1rem;
+}
+.model-card-total {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #4f46e5;
+}
+.model-default-badge {
     display: inline-block;
-    background: #ede9fe !important;
-    color: #5b21b6 !important;
-    font-size: 0.7rem;
+    background: #ede9fe;
+    color: #5b21b6;
+    font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    padding: 3px 10px;
+    padding: 2px 8px;
     border-radius: 99px;
-    margin-bottom: 0.5rem;
-}
-.page-subtitle { color: #64748b !important; font-size: 0.9rem; margin: 0; }
-.month-chip {
-    display: inline-block;
-    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
-    color: #ffffff !important;
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 4px 14px;
-    border-radius: 99px;
-    margin-bottom: 0.5rem;
-}
-.model-status {
-    font-size: 0.78rem;
-    color: #6366f1;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    margin-bottom: 1rem;
+    margin-left: 8px;
+    vertical-align: middle;
 }
 
-/* ── Main area text — force dark on light ────────────────────────────────────── */
+/* ── Main text ───────────────────────────────────────────────────────────────── */
 .main h1, .main h2, .main h3, .main h4,
 [data-testid="stMain"] h1,
 [data-testid="stMain"] h2,
@@ -314,23 +274,6 @@ div[data-testid="stBaseButton-primary"] button:focus-visible {
     font-size: 0.92rem;
 }
 
-/* ── Dialog ──────────────────────────────────────────────────────────────────── */
-[data-testid="stModal"] .stMarkdown h2 { color: #1e1b4b !important; margin-top: 1.2rem; }
-[data-testid="stModal"] .stMarkdown h3 { color: #4f46e5 !important; margin-top: 1rem; }
-[data-testid="stModal"] .stMarkdown code {
-    background: #ede9fe !important;
-    color: #5b21b6 !important;
-    padding: 2px 6px;
-    border-radius: 4px;
-}
-[data-testid="stModal"] .stMarkdown blockquote {
-    border-left: 4px solid #4f46e5 !important;
-    background: #f5f3ff !important;
-    padding: 0.6rem 1rem;
-    border-radius: 0 8px 8px 0;
-    margin: 0.8rem 0;
-}
-
 /* ── Divider ─────────────────────────────────────────────────────────────────── */
 hr { border-color: #e2e8f0 !important; }
 </style>
@@ -338,837 +281,849 @@ hr { border-color: #e2e8f0 !important; }
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# MATH CONSTANTS
+# CONSTANTS
 # ══════════════════════════════════════════════════════════════════════════════
-DOW_ORDER = [
-    "Monday", "Tuesday", "Wednesday",
-    "Thursday", "Friday", "Saturday", "Sunday",
-]
+DOW_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
-DEFAULT_PARAMS: dict = {
-    "model":          "adaptive_same_dow",
-    "lookback_weeks": 8,
-    "ema_span":       14,
-    "use_ewma":       True,
-    "ewma_halflife":  4,
+MODELS = {
+    "dod_chain":    "DoD Chain",
+    "adaptive_dow": "Adaptive DoW ★",
+    "same_dow":     "Same-DoW Avg",
+    "ema_baseline": "EMA Baseline",
+    "trend_dow":    "Trend-Adj DoW",
+    "ensemble":     "Ensemble",
 }
 
-MODEL_LABELS = {
-    "Adaptive DoW ★": "adaptive_same_dow",
-    "Same-DoW Avg":   "same_dow",
-    "EMA Baseline":   "ema_baseline",
+DEFAULT_MODEL_PARAMS: dict = {
+    "dod_chain":    {"lookback_weeks": 8,  "use_trimmed_mean": True},
+    "adaptive_dow": {"lookback_weeks": 8},
+    "same_dow":     {"lookback_weeks": 8},
+    "ema_baseline": {"ema_span": 14, "use_ewma": True, "ewma_halflife": 4},
+    "trend_dow":    {"lookback_weeks": 8,  "trend_lookback_weeks": 4},
+    "ensemble":     {},
 }
-MODEL_LABELS_INV = {v: k for k, v in MODEL_LABELS.items()}
+
+MODEL_DESCRIPTIONS = {
+    "dod_chain":    "Chains day-over-day historical ratios from the last actual spend. Re-anchors automatically as you enter each day.",
+    "adaptive_dow": "Per-weekday averages scaled by how this week is performing vs history.",
+    "same_dow":     "Simple average spend for each day of the week over the lookback window.",
+    "ema_baseline": "Exponential moving average of total spend, distributed by weekday pattern.",
+    "trend_dow":    "Detects a growth/decline trend and applies it to weekday averages.",
+    "ensemble":     "Median of all five other models — reduces the impact of any single model being wrong.",
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# APPS SCRIPT DATA LAYER
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _as_configured() -> bool:
+    return bool(st.secrets.get("AS_URL", "")) and bool(st.secrets.get("AS_SECRET", ""))
+
+
+def _as_get(action: str) -> dict:
+    r = requests.get(
+        st.secrets.get("AS_URL", ""),
+        params={"action": action, "secret": st.secrets.get("AS_SECRET", "")},
+        timeout=20,
+    )
+    r.raise_for_status()
+    return r.json()
+
+
+def _as_post(action: str, **kwargs) -> None:
+    payload = {"action": action, "secret": st.secrets.get("AS_SECRET", ""), **kwargs}
+    r = requests.post(st.secrets.get("AS_URL", ""), json=payload, timeout=20)
+    r.raise_for_status()
+
+
+@st.cache_data(ttl=30)
+def load_spend_history() -> dict:
+    """Returns {date_str: float}. Cached 30 s."""
+    if not _as_configured():
+        return {}
+    try:
+        return _as_get("get_history")
+    except Exception:
+        return {}
+
+
+@st.cache_data(ttl=30)
+def load_model_settings() -> dict:
+    """Returns {model_key: params_dict}. Cached 30 s."""
+    if not _as_configured():
+        return {}
+    try:
+        return _as_get("get_settings")
+    except Exception:
+        return {}
+
+
+def save_spend_entry(date_str: str, amount: float) -> None:
+    _as_post("save_entry", date=date_str, amount=round(float(amount), 2))
+    st.cache_data.clear()
+
+
+def save_model_settings(model_key: str, params: dict) -> None:
+    current = _as_get("get_settings")
+    current[model_key] = params
+    _as_post("save_settings", settings=current)
+    st.cache_data.clear()
+
+
+def bulk_save_history(entries: dict) -> None:
+    """Merge new entries into existing history."""
+    _as_post("bulk_save", entries={k: round(float(v), 2) for k, v in entries.items()})
+    st.cache_data.clear()
+
+
+def clear_all_data() -> None:
+    _as_post("clear_all")
+    st.cache_data.clear()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# MATH HELPERS  (ported verbatim from desktop_app.py v4.0)
+# DATA PREPARATION
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _same_dow_averages(df: pd.DataFrame, lookback_weeks) -> dict:
-    """
-    For each weekday compute the robust average spend over the last N actual
-    occurrences of that weekday.  lookback_weeks=None → all history.
-    Returns {dow_name: {"avg": float, "count": int}}
-    """
-    result: dict = {}
-    for dow in DOW_ORDER:
-        series = df[df["DayOfWeek"] == dow]["Spend"]
-        if lookback_weeks is not None:
-            series = series.tail(lookback_weeks)
-        y = series.values.astype(float)
-        n = len(y)
-        if n == 0:
-            result[dow] = {"avg": 0.0, "count": 0}
+def history_to_df(history: dict) -> pd.DataFrame:
+    """Convert {date_str: amount} → sorted DataFrame with 'date', 'spend', 'dow' columns."""
+    if not history:
+        return pd.DataFrame(columns=["date", "spend", "dow"])
+    rows = []
+    for k, v in history.items():
+        try:
+            rows.append({"date": pd.to_datetime(k), "spend": float(v)})
+        except (ValueError, TypeError):
             continue
-        trimmed = np.sort(y)[1:-1] if n >= 6 else y
-        result[dow] = {"avg": float(np.mean(trimmed)), "count": n}
+    if not rows:
+        return pd.DataFrame(columns=["date", "spend", "dow"])
+    df = pd.DataFrame(rows).sort_values("date").reset_index(drop=True)
+    df["dow"] = df["date"].dt.strftime("%a")
+    return df
+
+
+def parse_upload(file) -> dict:
+    """Parse CSV or Excel upload → {date_str: float}. Flexible column detection."""
+    name = file.name.lower()
+    if name.endswith(".csv"):
+        df = pd.read_csv(file)
+    else:
+        df = pd.read_excel(file)
+
+    date_col = None
+    spend_col = None
+    for col in df.columns:
+        cl = col.lower().strip()
+        if date_col is None and any(k in cl for k in ("date", "day")):
+            date_col = col
+        if spend_col is None and any(k in cl for k in ("spend", "cost", "amount", "revenue")):
+            spend_col = col
+
+    if date_col is None:
+        date_col = df.columns[0]
+    if spend_col is None:
+        spend_col = df.columns[1] if len(df.columns) > 1 else df.columns[0]
+
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+    df = df.dropna(subset=[date_col, spend_col])
+
+    result: dict = {}
+    for _, row in df.iterrows():
+        d = row[date_col].strftime("%Y-%m-%d")
+        try:
+            val = float(str(row[spend_col]).replace(",", "").replace("$", "").strip())
+            result[d] = val
+        except (ValueError, TypeError):
+            continue
     return result
 
 
-def _week_scale_factor(df: pd.DataFrame, dow_avgs: dict) -> float:
-    """
-    Compare the last 7 actual days to what Same-DoW would have predicted.
-    Returns a scale factor capped at [0.50, 2.00].
-    """
-    recent = df.tail(7)
-    ratios = []
-    for _, row in recent.iterrows():
-        predicted = dow_avgs.get(row["DayOfWeek"], {}).get("avg", 0.0)
-        if predicted > 0:
-            ratios.append(float(row["Spend"]) / predicted)
-    if not ratios:
-        return 1.0
-    scale = float(np.median(ratios))
-    return max(0.5, min(2.0, scale))
-
-
-def _compute_dow_multipliers_equal(df: pd.DataFrame) -> pd.Series:
-    global_avg = df["Spend"].mean()
-    if global_avg == 0:
-        raise ValueError("Average spend is zero — cannot compute multipliers.")
-    dow_avg = df.groupby("DayOfWeek")["Spend"].mean()
-    return (dow_avg / global_avg).reindex(DOW_ORDER).fillna(1.0)
-
-
-def _compute_dow_multipliers_ewma(df: pd.DataFrame, halflife_weeks: int = 4) -> pd.Series:
-    last_date     = df["Date"].max()
-    halflife_days = halflife_weeks * 7
-    decay         = np.log(2) / halflife_days
-    df = df.copy()
-    df["_w"] = np.exp(-decay * (last_date - df["Date"]).dt.days.astype(float))
-    global_wmean = float(np.average(df["Spend"], weights=df["_w"]))
-    if global_wmean == 0:
-        raise ValueError("Weighted average spend is zero.")
-    mults: dict = {}
-    for dow in DOW_ORDER:
-        mask = df["DayOfWeek"] == dow
-        mults[dow] = (
-            float(np.average(df.loc[mask, "Spend"], weights=df.loc[mask, "_w"]))
-            / global_wmean
-            if mask.any() else 1.0
-        )
-    return pd.Series(mults).reindex(DOW_ORDER).fillna(1.0)
-
-
 # ══════════════════════════════════════════════════════════════════════════════
-# PACING MATH
+# MATH — HELPERS
 # ══════════════════════════════════════════════════════════════════════════════
-def run_pacing_math(df: pd.DataFrame, params: dict | None = None) -> dict:
-    """
-    Three projection models tailored for PPC search ads.
-    Handles data cleaning internally.
-    """
-    p              = {**DEFAULT_PARAMS, **(params or {})}
-    model          = p["model"]
-    lookback_weeks = p["lookback_weeks"]
-    ema_span       = int(p["ema_span"])
-    use_ewma       = bool(p["use_ewma"])
-    ewma_halflife  = int(p["ewma_halflife"])
 
-    date_col = next(
-        (c for c in df.columns if c.strip().lower() in {"date", "date created"}), None
-    )
-    spend_col = next(
-        (c for c in df.columns if c.strip().lower() in {"spend", "cost", "amount"}), None
-    )
-    if not date_col:
-        raise ValueError(f"No 'Date' column found.\nColumns: {list(df.columns)}")
-    if not spend_col:
-        raise ValueError(f"No 'Spend' / 'Cost' / 'Amount' column found.\nColumns: {list(df.columns)}")
-
-    df = df.copy()
-    df[spend_col] = df[spend_col].astype(str).str.replace(r"[\$,\s]", "", regex=True)
-    df[spend_col] = pd.to_numeric(df[spend_col], errors="coerce").fillna(0.0)
-    df[date_col]  = pd.to_datetime(df[date_col], errors="coerce")
-    df = df.dropna(subset=[date_col]).sort_values(date_col).reset_index(drop=True)
-    df = df.rename(columns={date_col: "Date", spend_col: "Spend"})
-    df["DayOfWeek"] = df["Date"].dt.day_name()
-
-    last_date   = df["Date"].max()
-    next_day    = last_date + pd.Timedelta(days=1)
-    ay, am      = next_day.year, next_day.month
-    month_start = pd.Timestamp(ay, am, 1)
-    month_end   = pd.Timestamp(ay, am, calendar.monthrange(ay, am)[1])
-
-    mtd_mask   = (df["Date"] >= month_start) & (df["Date"] <= last_date)
-    mtd_df     = df.loc[mtd_mask, ["Date", "Spend"]].copy()
-    mtd_actual = float(mtd_df["Spend"].sum())
-
-    proj_dates = pd.date_range(start=next_day, end=month_end, freq="D")
-    week_scale = 1.0
-
-    if model in ("adaptive_same_dow", "same_dow"):
-        dow_avgs = _same_dow_averages(df, lookback_weeks)
-
-        if model == "adaptive_same_dow":
-            week_scale = _week_scale_factor(df, dow_avgs)
-
-        proj_rows = [
-            {
-                "Date":            d,
-                "Day of Week":     d.day_name(),
-                "Historical Avg":  round(dow_avgs.get(d.day_name(), {}).get("avg", 0.0), 2),
-                "Projected Spend": round(
-                    dow_avgs.get(d.day_name(), {}).get("avg", 0.0) * week_scale, 2
-                ),
-            }
-            for d in proj_dates
-        ]
-        proj_df = pd.DataFrame(
-            proj_rows or [],
-            columns=["Date", "Day of Week", "Historical Avg", "Projected Spend"],
-        )
-
-        if model == "adaptive_same_dow":
-            dow_display = {
-                dow: {
-                    "col2": f"${dow_avgs[dow]['avg']:,.2f}",
-                    "col3": f"${dow_avgs[dow]['avg'] * week_scale:,.2f}",
-                }
-                for dow in DOW_ORDER
-            }
-            dow_display_headers = ("Day of Week", "Historical Avg", "Adjusted Proj.")
-        else:
-            dow_display = {
-                dow: {
-                    "col2": f"${dow_avgs[dow]['avg']:,.2f}",
-                    "col3": f"{dow_avgs[dow]['count']} wks",
-                }
-                for dow in DOW_ORDER
-            }
-            dow_display_headers = ("Day of Week", "Avg Spend", "Sample Weeks")
-
-        dow_multipliers = pd.Series({dow: dow_avgs[dow]["avg"] for dow in DOW_ORDER})
-
-    else:  # ema_baseline
-        ema_series  = df["Spend"].ewm(span=ema_span, adjust=False).mean()
-        baseline    = float(ema_series.iloc[-1])
-        dow_multipliers = (
-            _compute_dow_multipliers_ewma(df, ewma_halflife)
-            if use_ewma
-            else _compute_dow_multipliers_equal(df)
-        )
-        dow_dict = dow_multipliers.to_dict()
-        proj_rows = [
-            {
-                "Date":            d,
-                "Day of Week":     d.day_name(),
-                "Multiplier":      round(float(dow_dict.get(d.day_name(), 1.0)), 4),
-                "Projected Spend": round(
-                    baseline * float(dow_dict.get(d.day_name(), 1.0)), 2
-                ),
-            }
-            for d in proj_dates
-        ]
-        proj_df = pd.DataFrame(
-            proj_rows or [],
-            columns=["Date", "Day of Week", "Multiplier", "Projected Spend"],
-        )
-        dow_display = {
-            dow: {
-                "col2": f"×{float(dow_multipliers.get(dow, 1.0)):.4f}",
-                "col3": f"{(float(dow_multipliers.get(dow, 1.0)) - 1) * 100:+.1f}%",
-            }
-            for dow in DOW_ORDER
-        }
-        dow_display_headers = ("Day of Week", "Multiplier", "vs. Average")
-
-    projected_remaining = float(proj_df["Projected Spend"].sum())
-    total_estimated     = mtd_actual + projected_remaining
-
-    pm       = am - 1 if am > 1 else 12
-    py       = ay if am > 1 else ay - 1
-    pm_start = pd.Timestamp(py, pm, 1)
-    pm_end   = pd.Timestamp(py, pm, calendar.monthrange(py, pm)[1])
-    pm_mask  = (df["Date"] >= pm_start) & (df["Date"] <= pm_end)
-    prev_df  = df.loc[pm_mask, ["Date", "Spend"]].copy()
-    prev_df["DayNum"] = prev_df["Date"].dt.day
-
-    return {
-        "df":                   df,
-        "model":                model,
-        "week_scale":           week_scale,
-        "dow_multipliers":      dow_multipliers,
-        "dow_display":          dow_display,
-        "dow_display_headers":  dow_display_headers,
-        "last_date":            last_date,
-        "active_year":          ay,
-        "active_month":         am,
-        "month_start":          month_start,
-        "month_end":            month_end,
-        "mtd_df":               mtd_df,
-        "mtd_actual":           mtd_actual,
-        "proj_df":              proj_df,
-        "projected_remaining":  projected_remaining,
-        "total_estimated":      total_estimated,
-        "prev_df":              prev_df,
-        "prev_month_start":     pm_start,
-        "params":               p,
-    }
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# HOW IT WORKS  —  dynamically reflects current model (ported from desktop_app.py)
-# ══════════════════════════════════════════════════════════════════════════════
-def get_how_it_works_steps(params: dict) -> list:
-    p      = {**DEFAULT_PARAMS, **params}
-    model  = p["model"]
-    weeks  = p["lookback_weeks"]
-    ewma   = bool(p["use_ewma"])
-    hl     = int(p["ewma_halflife"])
-    wk_str = f"last {weeks} weeks" if weeks else "all available history"
-
-    tomorrow_rule = {
-        "title": "📅  Step 1 — Active Month  (Tomorrow Rule)",
-        "body":  (
-            "The active month is the month of the day AFTER your last data row:\n\n"
-            "  •  Data ends Feb 28  →  Active Month = March\n"
-            "  •  Data ends Mar 31  →  Active Month = April\n\n"
-            "Every remaining day in that month gets a projection."
-        ),
-    }
-
-    if model == "adaptive_same_dow":
-        return [
-            tomorrow_rule,
-            {
-                "title": f"📊  Step 2 — Per-Weekday Historical Averages  ({wk_str})",
-                "body":  (
-                    f"For each weekday, the model computes the average actual spend "
-                    f"over the {wk_str} of data:\n\n"
-                    "  •  Monday avg  →  avg of the last "
-                    + (f"{weeks} Mondays" if weeks else "all Mondays")
-                    + "\n  •  Friday avg  →  avg of the last "
-                    + (f"{weeks} Fridays" if weeks else "all Fridays")
-                    + "\n\nOutliers: when a weekday has 6+ data points, the single "
-                    "highest and lowest days are dropped before averaging."
-                ),
-            },
-            {
-                "title": "⚡  Step 3 — This-Week Scale Factor  (real-time adjustment)",
-                "body":  (
-                    "The model then checks how this week is performing vs. the historical baseline:\n\n"
-                    "    Ratio(day) = Actual Spend ÷ Historical DoW Avg\n"
-                    "    Scale Factor = Median of all ratios in the last 7 days\n\n"
-                    "Examples:\n"
-                    "  •  Scale = 1.18 → this week running 18% above historical\n"
-                    "  •  Scale = 0.85 → this week running 15% below historical\n\n"
-                    "The scale factor is capped between 0.50 and 2.00 to prevent "
-                    "a single unusual week from causing wild projections.\n\n"
-                    "This makes the model react immediately when you change a budget, "
-                    "add campaigns, or experience seasonal shifts — without waiting "
-                    "for N new weeks of data."
-                ),
-            },
-            {
-                "title": "🔢  Step 4 — Daily Projection",
-                "body":  (
-                    "    Projected Spend(day D) = Historical DoW Avg × Scale Factor\n\n"
-                    "The historical average defines the weekly shape; the scale factor "
-                    "shifts the entire projection up or down to match current account performance."
-                ),
-            },
-            {
-                "title": "💰  Step 5 — MTD Actuals",
-                "body":  (
-                    "The sum of actual spend from the 1st of the Active Month up to your "
-                    "last data row. Can be $0 if data ends on the last day of the previous month."
-                ),
-            },
-            {
-                "title": "🎯  Step 6 — Total Estimated Month Spend",
-                "body":  (
-                    "  Total = MTD Actuals + Sum of All Projected Remaining Days\n\n"
-                    f"Combines confirmed actuals with adaptive DoW projections "
-                    f"({wk_str} lookback, real-time scale adjustment)."
-                ),
-            },
-        ]
-
-    elif model == "same_dow":
-        return [
-            tomorrow_rule,
-            {
-                "title": f"📊  Step 2 — Per-Weekday Averages  ({wk_str})",
-                "body":  (
-                    f"For each weekday, the model averages the actual spend over the "
-                    f"{wk_str}:\n\n"
-                    "  •  Next Monday  =  avg of the last "
-                    + (f"{weeks} Mondays" if weeks else "all Mondays") + "\n"
-                    "  •  Next Friday  =  avg of the last "
-                    + (f"{weeks} Fridays" if weeks else "all Fridays") + "\n\n"
-                    "No baseline scaling, no multipliers, no trend. "
-                    "Day-of-week pattern is embedded directly. "
-                    "Single highest and lowest days dropped when 6+ samples exist."
-                ),
-            },
-            {
-                "title": "🔢  Step 3 — Daily Projection",
-                "body": "    Projected Spend(day D) = Historical Avg for D's weekday",
-            },
-            {
-                "title": "💰  Step 4 — MTD Actuals",
-                "body": (
-                    "Sum of actual spend from the 1st of the Active Month to your last data row."
-                ),
-            },
-            {
-                "title": "🎯  Step 5 — Total Estimated Month Spend",
-                "body": (
-                    "  Total = MTD Actuals + Sum of All Projected Remaining Days\n\n"
-                    f"Stable and transparent — uses pure historical DoW averages "
-                    f"({wk_str} lookback), no real-time adjustment."
-                ),
-            },
-        ]
-
-    else:  # ema_baseline
-        return [
-            tomorrow_rule,
-            {
-                "title": "📐  Step 2 — Day-of-Week Multipliers",
-                "body":  (
-                    "Calculated from ALL historical data"
-                    + (f" with exponential weighting ({hl}-week half-life)" if ewma else "")
-                    + ":\n\n"
-                    "  Multiplier(DoW) = "
-                    + ("Weighted " if ewma else "") + "Mean(Spend on that DoW)  ÷  "
-                    + ("Weighted " if ewma else "") + "Global Daily Mean\n\n"
-                    + (
-                        f"A Monday from {hl} weeks ago counts half as much as last Monday."
-                        if ewma else "All historical days are weighted equally."
-                    )
-                ),
-            },
-            {
-                "title": f"📊  Step 3 — EMA Baseline  (span: {p['ema_span']} days)",
-                "body":  (
-                    f"An Exponential Moving Average over {p['ema_span']} days of actual spend. "
-                    "EMA weights recent days much more heavily than older ones — "
-                    "so the baseline responds quickly when you raise or lower budgets, "
-                    "without extrapolating a false linear trend."
-                ),
-            },
-            {
-                "title": "🔢  Step 4 — Daily Projection",
-                "body": (
-                    "    Projected Spend = EMA Baseline × Multiplier(Day of Week)\n\n"
-                    "EMA baseline sets the spending level; DoW multiplier adds weekly rhythm."
-                ),
-            },
-            {
-                "title": "💰  Step 5 — MTD Actuals",
-                "body": "Sum of actual spend from the 1st of the Active Month to your last data row.",
-            },
-            {
-                "title": "🎯  Step 6 — Total Estimated Month Spend",
-                "body": (
-                    "  Total = MTD Actuals + Sum of All Projected Remaining Days\n\n"
-                    "Based on EMA baseline"
-                    + (" + exponentially-weighted DoW multipliers." if ewma
-                       else " + equal-weight DoW multipliers.")
-                ),
-            },
-        ]
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# DIALOG — How the Math Works
-# ══════════════════════════════════════════════════════════════════════════════
-@st.dialog("🧠 How the Math Works", width="large")
-def show_explainer(params: dict):
-    p = {**DEFAULT_PARAMS, **params}
-    model_label = MODEL_LABELS_INV.get(p["model"], p["model"])
-    wk = p["lookback_weeks"]
-
-    if p["model"] in ("adaptive_same_dow", "same_dow"):
-        badge = f"**Model:** {model_label}  ·  **Lookback:** {f'{wk} wks' if wk else 'all history'}"
-    elif p["use_ewma"]:
-        badge = f"**Model:** {model_label}  ·  **Weighted DoW** ({p['ewma_halflife']}w half-life)"
+def _same_dow_avg(df: pd.DataFrame, lookback_weeks) -> dict:
+    """Mean spend per short-name weekday (Mon…Sun) over lookback window."""
+    if lookback_weeks:
+        cutoff = df["date"].max() - pd.Timedelta(weeks=int(lookback_weeks))
+        sub = df[df["date"] >= cutoff]
     else:
-        badge = f"**Model:** {model_label}  ·  Equal-weight DoW"
+        sub = df
+    avgs = sub.groupby("dow")["spend"].mean().to_dict()
+    # Fill any missing weekdays with overall mean
+    overall = sub["spend"].mean() if not sub.empty else 0.0
+    return {d: avgs.get(d, overall) for d in DOW_SHORT}
 
-    st.markdown(badge)
-    st.divider()
 
-    for step in get_how_it_works_steps(params):
-        st.markdown(f"### {step['title']}")
-        st.code(step["body"], language=None)
+def _week_scale_factor(df: pd.DataFrame, dow_avg: dict) -> float:
+    """Scale factor from this week's actuals vs DoW averages. Capped [0.5, 2.0]."""
+    today_ts = pd.Timestamp.today().normalize()
+    week_start = today_ts - pd.Timedelta(days=today_ts.dayofweek)
+    this_week = df[df["date"] >= week_start]
+    if this_week.empty:
+        return 1.0
+    ratios = []
+    for _, row in this_week.iterrows():
+        avg = dow_avg.get(row["dow"], 0.0)
+        if avg > 0:
+            ratios.append(row["spend"] / avg)
+    return float(np.clip(np.median(ratios), 0.5, 2.0)) if ratios else 1.0
+
+
+def _dow_multipliers_equal(dow_avg: dict) -> dict:
+    total = sum(dow_avg.get(d, 0.0) for d in DOW_SHORT)
+    if total == 0:
+        return {d: 1 / 7 for d in DOW_SHORT}
+    return {d: dow_avg.get(d, 0.0) / total for d in DOW_SHORT}
+
+
+def _dow_multipliers_ewma(df: pd.DataFrame, halflife_weeks: int) -> dict:
+    """EWMA-weighted DoW multipliers. halflife in weeks → converted to days."""
+    df2 = df.sort_values("date").copy()
+    hl_days = halflife_weeks * 7
+    n = len(df2)
+    weights = np.exp(-np.log(2) / hl_days * (n - 1 - np.arange(n)))
+    df2["_w"] = weights
+    grouped = df2.groupby("dow").apply(
+        lambda g: (g["spend"] * g["_w"]).sum() / g["_w"].sum()
+    )
+    total = sum(grouped.get(d, 0.0) for d in DOW_SHORT)
+    if total == 0:
+        return {d: 1 / 7 for d in DOW_SHORT}
+    return {d: grouped.get(d, 0.0) / total for d in DOW_SHORT}
+
+
+def _month_calendar(year: int, month: int, today: date) -> tuple[list[date], dict]:
+    """Return (all_days_in_month, actual_dict). actual_dict: date → spend."""
+    days_in_month = calendar.monthrange(year, month)[1]
+    all_days = [date(year, month, d) for d in range(1, days_in_month + 1)]
+    return all_days, {}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MATH — MODEL PROJECTIONS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _actual_dict(df: pd.DataFrame, year: int, month: int) -> dict:
+    """Dict of date → spend for actuals in given month."""
+    sub = df[(df["date"].dt.year == year) & (df["date"].dt.month == month)]
+    return {row["date"].date(): row["spend"] for _, row in sub.iterrows()}
+
+
+def _build_proj_df(all_days: list, actual: dict, today: date, projected_values: dict) -> pd.DataFrame:
+    """Assemble result DataFrame from actual + projected dicts."""
+    rows = []
+    for d in all_days:
+        if d in actual:
+            rows.append({"date": pd.Timestamp(d), "spend": actual[d], "type": "actual"})
+        elif d < today:
+            rows.append({"date": pd.Timestamp(d), "spend": None, "type": "missing"})
+        else:
+            rows.append({"date": pd.Timestamp(d), "spend": projected_values.get(d, 0.0), "type": "projected"})
+    return pd.DataFrame(rows)
+
+
+def project_dod_chain(df: pd.DataFrame, params: dict, today: date) -> pd.DataFrame:
+    lookback = params.get("lookback_weeks")
+    trimmed  = params.get("use_trimmed_mean", True)
+
+    hist = df.sort_values("date").copy()
+    if lookback:
+        cutoff = pd.Timestamp(today) - pd.Timedelta(weeks=int(lookback))
+        hist = hist[hist["date"] >= cutoff]
+
+    # Build day-over-day ratio pairs per (prev_dow, curr_dow) transition
+    pairs: dict = {}
+    for i in range(1, len(hist)):
+        prev = hist.iloc[i - 1]
+        curr = hist.iloc[i]
+        gap = (curr["date"] - prev["date"]).days
+        if gap != 1 or prev["spend"] <= 0:
+            continue
+        key = (prev["dow"], curr["dow"])
+        pairs.setdefault(key, []).append(curr["spend"] / prev["spend"])
+
+    ratios: dict = {}
+    for key, vals in pairs.items():
+        if len(vals) >= 3 and trimmed:
+            ratios[key] = float(np.mean(sorted(vals)[1:-1]))
+        else:
+            ratios[key] = float(np.mean(vals))
+
+    year, month = today.year, today.month
+    days_in_month = calendar.monthrange(year, month)[1]
+    all_days = [date(year, month, d) for d in range(1, days_in_month + 1)]
+    actual = _actual_dict(df, year, month)
+
+    # Fallback DoW avg for days with no chain anchor
+    dow_avg = _same_dow_avg(df, lookback)
+
+    projected: dict = {}
+    last_val = None
+    last_dow = None
+
+    # Prime anchor: last actual in full history before current month
+    prior = df[df["date"] < pd.Timestamp(date(year, month, 1))].sort_values("date")
+    if not prior.empty:
+        last_val = prior.iloc[-1]["spend"]
+        last_dow = prior.iloc[-1]["dow"]
+
+    for d in all_days:
+        dow = d.strftime("%a")
+        if d in actual:
+            last_val = actual[d]
+            last_dow = dow
+        elif d >= today:
+            if last_val is not None and last_dow is not None:
+                key = (last_dow, dow)
+                ratio = ratios.get(key, 1.0)
+                val = last_val * ratio
+            else:
+                val = dow_avg.get(dow, 0.0)
+            projected[d] = max(0.0, val)
+            last_val = projected[d]
+            last_dow = dow
+
+    return _build_proj_df(all_days, actual, today, projected)
+
+
+def project_adaptive_dow(df: pd.DataFrame, params: dict, today: date) -> pd.DataFrame:
+    lookback = params.get("lookback_weeks", 8)
+    dow_avg  = _same_dow_avg(df, lookback)
+    scale    = _week_scale_factor(df, dow_avg)
+
+    year, month = today.year, today.month
+    days_in_month = calendar.monthrange(year, month)[1]
+    all_days = [date(year, month, d) for d in range(1, days_in_month + 1)]
+    actual = _actual_dict(df, year, month)
+
+    projected = {d: max(0.0, dow_avg.get(d.strftime("%a"), 0.0) * scale)
+                 for d in all_days if d >= today and d not in actual}
+    return _build_proj_df(all_days, actual, today, projected)
+
+
+def project_same_dow(df: pd.DataFrame, params: dict, today: date) -> pd.DataFrame:
+    lookback = params.get("lookback_weeks", 8)
+    dow_avg  = _same_dow_avg(df, lookback)
+
+    year, month = today.year, today.month
+    days_in_month = calendar.monthrange(year, month)[1]
+    all_days = [date(year, month, d) for d in range(1, days_in_month + 1)]
+    actual = _actual_dict(df, year, month)
+
+    projected = {d: max(0.0, dow_avg.get(d.strftime("%a"), 0.0))
+                 for d in all_days if d >= today and d not in actual}
+    return _build_proj_df(all_days, actual, today, projected)
+
+
+def project_ema_baseline(df: pd.DataFrame, params: dict, today: date) -> pd.DataFrame:
+    use_ewma  = params.get("use_ewma", True)
+    ema_span  = params.get("ema_span", 14)
+    halflife  = params.get("ewma_halflife", 4)
+
+    hist = df.sort_values("date").copy()
+    ema_val = float(hist["spend"].ewm(span=ema_span).mean().iloc[-1])
+
+    if use_ewma:
+        mults = _dow_multipliers_ewma(df, halflife)
+    else:
+        dow_avg = _same_dow_avg(df, None)
+        mults   = _dow_multipliers_equal(dow_avg)
+
+    year, month = today.year, today.month
+    days_in_month = calendar.monthrange(year, month)[1]
+    all_days = [date(year, month, d) for d in range(1, days_in_month + 1)]
+    actual = _actual_dict(df, year, month)
+
+    total_weight = sum(mults[d.strftime("%a")] for d in all_days)
+    projected = {}
+    for d in all_days:
+        if d >= today and d not in actual:
+            m = mults[d.strftime("%a")]
+            projected[d] = max(0.0, ema_val * m * days_in_month / total_weight) if total_weight > 0 else 0.0
+
+    return _build_proj_df(all_days, actual, today, projected)
+
+
+def project_trend_dow(df: pd.DataFrame, params: dict, today: date) -> pd.DataFrame:
+    lookback       = params.get("lookback_weeks", 8)
+    trend_lookback = params.get("trend_lookback_weeks", 4)
+    dow_avg        = _same_dow_avg(df, lookback)
+
+    # OLS slope on recent spend
+    hist = df.sort_values("date").copy()
+    trend_cutoff = hist["date"].max() - pd.Timedelta(weeks=int(trend_lookback) * 2)
+    trend_data   = hist[hist["date"] >= trend_cutoff].copy()
+
+    slope = 0.0
+    days_since_midpoint = 0
+    if len(trend_data) >= 3:
+        x = (trend_data["date"] - trend_data["date"].min()).dt.days.values.astype(float)
+        y = trend_data["spend"].values.astype(float)
+        slope = float(np.polyfit(x, y, 1)[0])
+        midpoint_date = trend_data["date"].iloc[len(trend_data) // 2]
+        days_since_midpoint = (pd.Timestamp(today) - midpoint_date).days
+
+    year, month = today.year, today.month
+    days_in_month = calendar.monthrange(year, month)[1]
+    all_days = [date(year, month, d) for d in range(1, days_in_month + 1)]
+    actual = _actual_dict(df, year, month)
+
+    projected = {}
+    for d in all_days:
+        if d >= today and d not in actual:
+            days_out = (d - today).days
+            base = dow_avg.get(d.strftime("%a"), 0.0)
+            projected[d] = max(0.0, base + slope * (days_since_midpoint + days_out))
+
+    return _build_proj_df(all_days, actual, today, projected)
+
+
+def run_all_models(df: pd.DataFrame, saved_settings: dict, local_overrides: dict, today: date) -> dict:
+    """Run all 6 models. Returns {model_key: DataFrame}."""
+
+    def get_params(key: str) -> dict:
+        p = dict(DEFAULT_MODEL_PARAMS.get(key, {}))
+        p.update(saved_settings.get(key, {}))
+        p.update(local_overrides.get(key, {}))
+        return p
+
+    proj_fns = {
+        "dod_chain":    project_dod_chain,
+        "adaptive_dow": project_adaptive_dow,
+        "same_dow":     project_same_dow,
+        "ema_baseline": project_ema_baseline,
+        "trend_dow":    project_trend_dow,
+    }
+
+    results: dict = {}
+    for key, fn in proj_fns.items():
+        results[key] = fn(df, get_params(key), today)
+
+    # Ensemble: median of all 5 models' projected values per day
+    year, month = today.year, today.month
+    days_in_month = calendar.monthrange(year, month)[1]
+    all_days = [date(year, month, d) for d in range(1, days_in_month + 1)]
+    actual = _actual_dict(df, year, month)
+
+    ens_rows = []
+    for d in all_days:
+        if d in actual:
+            ens_rows.append({"date": pd.Timestamp(d), "spend": actual[d], "type": "actual"})
+        elif d < today:
+            ens_rows.append({"date": pd.Timestamp(d), "spend": None, "type": "missing"})
+        else:
+            vals = []
+            for key in proj_fns:
+                sub = results[key]
+                row = sub[sub["date"] == pd.Timestamp(d)]
+                if not row.empty and row.iloc[0]["type"] == "projected":
+                    v = row.iloc[0]["spend"]
+                    if v is not None:
+                        vals.append(v)
+            med = float(np.median(vals)) if vals else 0.0
+            ens_rows.append({"date": pd.Timestamp(d), "spend": med, "type": "projected"})
+
+    results["ensemble"] = pd.DataFrame(ens_rows)
+    return results
+
+
+def projected_total(proj_df: pd.DataFrame, actual_mtd: float) -> float:
+    fut = proj_df[proj_df["type"] == "projected"]["spend"]
+    return actual_mtd + float(fut.sum())
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CHART
+# ══════════════════════════════════════════════════════════════════════════════
+
+def make_chart(proj_df: pd.DataFrame, model_name: str) -> go.Figure:
+    actual    = proj_df[proj_df["type"] == "actual"]
+    future    = proj_df[proj_df["type"] == "projected"]
+
+    fig = go.Figure()
+
+    if not actual.empty:
+        fig.add_trace(go.Scatter(
+            x=actual["date"], y=actual["spend"],
+            mode="lines+markers", name="Actual",
+            line=dict(color="#6366f1", width=2.5),
+            marker=dict(size=6, color="#6366f1"),
+        ))
+
+    if not future.empty:
+        # Dashed bridge from last actual to first projected
+        if not actual.empty:
+            fig.add_trace(go.Scatter(
+                x=[actual["date"].iloc[-1], future["date"].iloc[0]],
+                y=[actual["spend"].iloc[-1], future["spend"].iloc[0]],
+                mode="lines",
+                line=dict(color="#a5b4fc", width=2, dash="dot"),
+                showlegend=False,
+            ))
+        fig.add_trace(go.Scatter(
+            x=future["date"], y=future["spend"],
+            mode="lines+markers", name="Projected",
+            line=dict(color="#a5b4fc", width=2, dash="dot"),
+            marker=dict(size=5, symbol="circle-open", color="#6366f1"),
+        ))
+
+    fig.update_layout(
+        title=dict(text=model_name, font=dict(size=15, color="#1e1b4b")),
+        xaxis_title=None,
+        yaxis_title="Daily Spend ($)",
+        hovermode="x unified",
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+        font=dict(family="Inter, sans-serif", size=13),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        margin=dict(l=10, r=10, t=50, b=10),
+        yaxis=dict(tickprefix="$", tickformat=",.0f", gridcolor="#f1f5f9", zerolinecolor="#e2e8f0"),
+        xaxis=dict(gridcolor="#f1f5f9"),
+    )
+    return fig
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # PASSWORD GATE
-# APP_PASSWORD is set in Streamlit Cloud → App Settings → Secrets (never in code).
-# If absent (local dev), the gate is skipped automatically.
 # ══════════════════════════════════════════════════════════════════════════════
-_app_password = st.secrets.get("APP_PASSWORD", "")
-if _app_password:
-    _entered = st.text_input("🔒 Enter password to access this app", type="password")
-    if _entered != _app_password:
+_app_pw = st.secrets.get("APP_PASSWORD", "")
+if _app_pw:
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+    if not st.session_state.authenticated:
+        st.markdown("## 🔒 PPC Spend Projector")
+        _entered = st.text_input("Enter password", type="password", key="pw_input")
+        if st.button("Unlock"):
+            if _entered == _app_pw:
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("Incorrect password.")
         st.stop()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# SESSION STATE INIT
+# SESSION STATE
 # ══════════════════════════════════════════════════════════════════════════════
+if "selected_model" not in st.session_state:
+    st.session_state.selected_model = None      # None = dashboard
+if "local_params" not in st.session_state:
+    st.session_state.local_params: dict = {}    # {model_key: {param: val}}
+if "confirm_clear" not in st.session_state:
+    st.session_state.confirm_clear = False
 if "uploader_counter" not in st.session_state:
-    st.session_state["uploader_counter"] = 0
+    st.session_state.uploader_counter = 0
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DATA LOAD
+# ══════════════════════════════════════════════════════════════════════════════
+history       = load_spend_history()
+model_settings = load_model_settings()
+df             = history_to_df(history)
+today          = date.today()
+
+has_data = len(df) >= 7    # Need at least a week for any model to be meaningful
+
+# Pre-compute projections and totals if we have data
+if has_data:
+    all_proj  = run_all_models(df, model_settings, st.session_state.local_params, today)
+    year, month = today.year, today.month
+    actual_mtd  = float(df[(df["date"].dt.year == year) & (df["date"].dt.month == month)]["spend"].sum())
+    model_totals = {k: projected_total(all_proj[k], actual_mtd) for k in MODELS}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SIDEBAR
 # ══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
+    st.markdown("## 📊 PPC Spend Projector")
+    st.markdown("---")
 
-    # ── Branding ────────────────────────────────────────────────────────────────
-    st.markdown("""
-    <div style="text-align:center; padding: 0.5rem 0 0.25rem;">
-        <div style="font-size:2.2rem; margin-bottom:0.2rem;">📊</div>
-        <div style="font-size:1.1rem; font-weight:700; color:#ffffff; letter-spacing:-0.01em;">
-            PPC Spend Projector
-        </div>
-        <div style="font-size:0.72rem; color:#818cf8; margin-top:0.2rem;">
-            GOOGLE &amp; BING SEARCH ADS
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # ── Daily spend entry ──────────────────────────────────────────────────────
+    st.markdown("### 📅 Enter Spend")
+    entry_date   = st.date_input("Date", value=today - timedelta(days=1), max_value=today)
+    entry_amount = st.number_input("Amount ($)", min_value=0.0, step=100.0, format="%.2f",
+                                   key="entry_amount")
+    if st.button("💾 Save", use_container_width=True, key="btn_save_spend"):
+        if entry_amount > 0:
+            if _as_configured():
+                save_spend_entry(entry_date.strftime("%Y-%m-%d"), entry_amount)
+                st.success(f"Saved ${entry_amount:,.2f} for {entry_date}")
+                st.rerun()
+            else:
+                st.warning("Google Apps Script not configured — data won't persist. See Setup Required in the sidebar.")
+        else:
+            st.warning("Enter an amount greater than $0.")
 
-    st.divider()
+    st.markdown("---")
 
-    # ── 📁 Data Input ───────────────────────────────────────────────────────────
-    st.markdown("#### 📁 Data Input")
-
-    df_raw = None
-    uploaded = st.file_uploader(
-        "Upload your spend data (.csv or .xlsx)",
-        type=["csv", "xlsx"],
-        key=f"file_uploader_{st.session_state['uploader_counter']}",
-    )
-    if uploaded:
-        try:
-            df_raw = (
-                pd.read_excel(uploaded)
-                if uploaded.name.endswith(".xlsx")
-                else pd.read_csv(uploaded)
-            )
-            st.success(f"✅ Loaded: `{uploaded.name}`")
-        except Exception as exc:
-            st.error(f"Could not read file.\n\n{exc}")
-
-    st.markdown("""
-    <div style="color:#6366f1; font-size:0.75rem; margin-top:0.6rem; line-height:1.7;">
-        Requires columns:<br>
-        <code style="background:rgba(99,102,241,0.2);color:#a5b4fc;padding:1px 5px;
-        border-radius:3px;">Date</code>&nbsp;or&nbsp;
-        <code style="background:rgba(99,102,241,0.2);color:#a5b4fc;padding:1px 5px;
-        border-radius:3px;">Date Created</code><br>
-        <code style="background:rgba(99,102,241,0.2);color:#a5b4fc;padding:1px 5px;
-        border-radius:3px;">Spend</code>&nbsp;/&nbsp;
-        <code style="background:rgba(99,102,241,0.2);color:#a5b4fc;padding:1px 5px;
-        border-radius:3px;">Cost</code>&nbsp;/&nbsp;
-        <code style="background:rgba(99,102,241,0.2);color:#a5b4fc;padding:1px 5px;
-        border-radius:3px;">Amount</code>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.divider()
-
-    # ── 🔢 Projection Model ──────────────────────────────────────────────────────
-    st.markdown("#### 🔢 Projection Model")
-
-    model_label = st.radio(
-        "",
-        list(MODEL_LABELS.keys()),
-        index=0,
-        label_visibility="collapsed",
-    )
-    model_key = MODEL_LABELS[model_label]
-
-    if model_key in ("adaptive_same_dow", "same_dow"):
-        lookback_choice = st.selectbox(
-            "DoW Lookback",
-            ["4 wks", "8 wks (default)", "All"],
-            index=1,
+    # ── Historical upload ──────────────────────────────────────────────────────
+    with st.expander("📁 Historical Upload", expanded=False):
+        st.caption("Upload a CSV or Excel file with Date and Spend columns. New data is merged with existing.")
+        up_file = st.file_uploader(
+            "Choose file",
+            type=["csv", "xlsx", "xls"],
+            key=f"uploader_{st.session_state.uploader_counter}",
         )
-        lookback_weeks = {"4 wks": 4, "8 wks (default)": 8, "All": None}[lookback_choice]
-        use_ewma = True  # not used by these models
-    else:  # ema_baseline
-        lookback_weeks = 8  # not used by EMA
-        use_ewma = st.toggle("Weighted DoW (4-wk half-life)", value=True)
+        if up_file is not None:
+            if st.button("Import & Merge", use_container_width=True, key="btn_import"):
+                try:
+                    new_entries = parse_upload(up_file)
+                    if new_entries:
+                        if _as_configured():
+                            bulk_save_history(new_entries)
+                            st.session_state.uploader_counter += 1
+                            st.success(f"Imported {len(new_entries)} records.")
+                            st.rerun()
+                        else:
+                            st.warning("Google Apps Script not configured — data won't persist. See Setup Required in the sidebar.")
+                    else:
+                        st.error("No valid date/spend data found in file.")
+                except Exception as exc:
+                    st.error(f"Upload failed: {exc}")
 
-    params = {
-        "model":          model_key,
-        "lookback_weeks": lookback_weeks,
-        "use_ewma":       use_ewma,
+        st.markdown("---")
+        st.markdown("**⚠ Danger Zone**")
+        if not st.session_state.confirm_clear:
+            st.markdown('<div class="danger-btn">', unsafe_allow_html=True)
+            if st.button("🗑 Clear All Data", use_container_width=True, key="btn_clear_start"):
+                st.session_state.confirm_clear = True
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.warning("This will permanently delete all spend history and model settings.")
+            confirm_text = st.text_input("Type CLEAR to confirm", key="confirm_input")
+            c1, c2 = st.columns(2)
+            with c1:
+                if st.button("Confirm", use_container_width=True, key="btn_clear_confirm"):
+                    if confirm_text.strip() == "CLEAR":
+                        if _as_configured():
+                            clear_all_data()
+                        st.session_state.confirm_clear = False
+                        st.success("All data cleared.")
+                        st.rerun()
+                    else:
+                        st.error("Type CLEAR exactly.")
+            with c2:
+                if st.button("Cancel", use_container_width=True, key="btn_clear_cancel"):
+                    st.session_state.confirm_clear = False
+                    st.rerun()
+
+    # ── Setup note if Apps Script not configured ───────────────────────────────
+    if not _as_configured():
+        st.markdown("---")
+        with st.expander("⚙ Setup Required", expanded=True):
+            st.markdown("""
+Data persistence requires two values in **App Settings → Secrets**:
+
+```toml
+AS_URL    = "https://script.google.com/macros/s/.../exec"
+AS_SECRET = "your-chosen-api-secret"
+```
+
+**Setup (~10 min):**
+1. Create a Google Sheet with tabs `Spend History` and `Model Settings`
+2. Extensions → Apps Script → paste the provided script → change `SECRET` → Save
+3. Deploy → New deployment → Web app → Execute as Me, Anyone → copy URL
+4. Add `AS_URL` + `AS_SECRET` to Streamlit secrets above
+""")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MAIN — DASHBOARD VIEW
+# ══════════════════════════════════════════════════════════════════════════════
+if st.session_state.selected_model is None:
+
+    month_label = today.strftime("%B %Y")
+    st.markdown(f"## 📅 {month_label}")
+
+    if not has_data:
+        st.info(
+            "No spend data loaded yet.\n\n"
+            "Upload your historical data using **Historical Upload** in the sidebar, "
+            "or enter a day's spend above."
+        )
+    else:
+        col_a, col_b = st.columns([3, 1])
+        with col_a:
+            st.markdown(f"**MTD Actual: ${actual_mtd:,.0f}**")
+        with col_b:
+            days_gone   = sum(1 for d in [date(year, month, x) for x in range(1, today.day)] if True)
+            days_total  = calendar.monthrange(year, month)[1]
+            st.caption(f"Day {today.day} of {days_total}")
+
+        st.markdown("---")
+        st.markdown("### Model Comparison — Projected Month Total")
+
+        for key, label in MODELS.items():
+            total = model_totals.get(key, 0.0)
+            is_default = key == "dod_chain"
+
+            badge = '<span class="model-default-badge">Default</span>' if is_default else ""
+            card_html = f"""
+<div class="model-card">
+  <div>
+    <span class="model-card-name">{label}</span>{badge}
+    <br><small style="color:#6b7280;font-size:0.78rem;">{MODEL_DESCRIPTIONS[key]}</small>
+  </div>
+  <span class="model-card-total">${total:,.0f}</span>
+</div>"""
+            st.markdown(card_html, unsafe_allow_html=True)
+
+            # Drill-down button positioned below each card
+            if st.button("View details →", key=f"drill_{key}", use_container_width=False):
+                st.session_state.selected_model = key
+                st.session_state.local_params   = {}
+                st.rerun()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MAIN — MODEL DETAIL VIEW
+# ══════════════════════════════════════════════════════════════════════════════
+else:
+    model_key  = st.session_state.selected_model
+    model_name = MODELS[model_key]
+
+    if st.button("← Back to Dashboard", key="btn_back"):
+        st.session_state.selected_model = None
+        st.session_state.local_params   = {}
+        st.rerun()
+
+    st.markdown(f"## {model_name}")
+    st.caption(MODEL_DESCRIPTIONS[model_key])
+    st.markdown("---")
+
+    # ── Parameters ────────────────────────────────────────────────────────────
+    saved_p   = dict(DEFAULT_MODEL_PARAMS.get(model_key, {}))
+    saved_p.update(model_settings.get(model_key, {}))
+    local_p   = st.session_state.local_params.get(model_key, {})
+    current_p = {**saved_p, **local_p}
+
+    st.markdown("#### ⚙ Parameters")
+    new_p = dict(current_p)
+
+    if model_key in ("dod_chain", "adaptive_dow", "same_dow", "trend_dow"):
+        lb_map = {"4 weeks": 4, "8 weeks": 8, "All history": None}
+        lb_rev = {v: k for k, v in lb_map.items()}
+        lb_cur = lb_rev.get(current_p.get("lookback_weeks", 8), "8 weeks")
+        lb_sel = st.radio("Lookback window", list(lb_map.keys()), index=list(lb_map.keys()).index(lb_cur),
+                          horizontal=True, key=f"lb_{model_key}")
+        new_p["lookback_weeks"] = lb_map[lb_sel]
+
+    if model_key == "dod_chain":
+        new_p["use_trimmed_mean"] = st.checkbox(
+            "Drop min/max outlier pairs (trimmed mean)",
+            value=current_p.get("use_trimmed_mean", True),
+            key="dod_trimmed",
+        )
+
+    if model_key == "ema_baseline":
+        new_p["use_ewma"] = st.checkbox(
+            "Use EWMA weighting for weekday multipliers",
+            value=current_p.get("use_ewma", True),
+            key="ema_use_ewma",
+        )
+        new_p["ema_span"] = st.slider(
+            "EMA span (days)", 7, 30, value=int(current_p.get("ema_span", 14)), key="ema_span"
+        )
+        if new_p["use_ewma"]:
+            new_p["ewma_halflife"] = st.slider(
+                "EWMA half-life (weeks)", 1, 12, value=int(current_p.get("ewma_halflife", 4)),
+                key="ema_halflife"
+            )
+
+    if model_key == "trend_dow":
+        new_p["trend_lookback_weeks"] = st.slider(
+            "Trend detection window (weeks)", 2, 8,
+            value=int(current_p.get("trend_lookback_weeks", 4)),
+            key="trend_lw",
+        )
+
+    if model_key == "ensemble":
+        st.info("Ensemble is the median of all five other models. No parameters to tune.")
+
+    # Track live param changes in session state (not yet saved)
+    st.session_state.local_params[model_key] = {
+        k: v for k, v in new_p.items() if v != saved_p.get(k)
     }
 
-    st.divider()
+    unsaved = bool(st.session_state.local_params.get(model_key))
+    if unsaved:
+        st.caption("_Unsaved changes — chart reflects current values. Click Save to persist._")
 
-    # ── ℹ️ About ─────────────────────────────────────────────────────────────────
-    st.markdown("#### ℹ️ About")
-    if st.button("🧠 How the Math Works", use_container_width=True):
-        show_explainer(params)
+    col_save, col_reset = st.columns(2)
+    with col_save:
+        if st.button("💾 Save Settings", use_container_width=True, key="btn_save_settings"):
+            if _as_configured():
+                save_model_settings(model_key, new_p)
+                st.session_state.local_params[model_key] = {}
+                st.success("Settings saved for all users.")
+                st.rerun()
+            else:
+                st.warning("Google Apps Script not configured — settings won't persist. See Setup Required in the sidebar.")
+    with col_reset:
+        if st.button("Reset to Defaults", use_container_width=True, key="btn_reset"):
+            if _as_configured():
+                save_model_settings(model_key, {})
+            st.session_state.local_params[model_key] = {}
+            st.rerun()
 
-    st.divider()
+    st.markdown("---")
 
-    # ── 🗑️ Reset ─────────────────────────────────────────────────────────────────
-    st.markdown("""
-    <div style="color:#94a3b8; font-size:0.72rem; margin-bottom:0.5rem; text-align:center;">
-        Clear all data and start over
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown('<div class="danger-btn">', unsafe_allow_html=True)
-    if st.button("🗑️ Start Fresh / Clear Data", use_container_width=True):
-        next_counter = st.session_state["uploader_counter"] + 1
-        st.session_state.clear()
-        st.session_state["uploader_counter"] = next_counter
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    # ── Chart & projected total ───────────────────────────────────────────────
+    if has_data:
+        # Re-run just this model with current (possibly unsaved) params
+        proj_fn_map = {
+            "dod_chain":    project_dod_chain,
+            "adaptive_dow": project_adaptive_dow,
+            "same_dow":     project_same_dow,
+            "ema_baseline": project_ema_baseline,
+            "trend_dow":    project_trend_dow,
+        }
+        if model_key == "ensemble":
+            proj_df = all_proj["ensemble"]
+        else:
+            proj_df = proj_fn_map[model_key](df, new_p, today)
 
+        st.plotly_chart(make_chart(proj_df, model_name), use_container_width=True)
 
-# ══════════════════════════════════════════════════════════════════════════════
-# MAIN — Header
-# ══════════════════════════════════════════════════════════════════════════════
-st.markdown("""
-<div style="margin-bottom: 1.5rem;">
-    <div class="page-badge">Monthly Budget Pacing</div>
-    <p class="page-title">PPC Spend Projector</p>
-    <p class="page-subtitle">Upload a spend file in the sidebar to generate a projection.</p>
-</div>
-""", unsafe_allow_html=True)
+        # Summary metrics
+        total_proj = projected_total(proj_df, actual_mtd)
+        c1, c2 = st.columns(2)
+        with c1:
+            st.metric("MTD Actual",            f"${actual_mtd:,.0f}")
+        with c2:
+            st.metric("Projected Month Total", f"${total_proj:,.0f}")
 
-if df_raw is None:
-    st.info("👈 Upload a .csv or .xlsx file in the sidebar to get started.")
-    st.stop()
+        # DoW breakdown table
+        with st.expander("📊 Day-of-Week Breakdown", expanded=False):
+            dow_rows = []
+            for d in DOW_SHORT:
+                sub = proj_df[proj_df["date"].dt.strftime("%a") == d]
+                act = sub[sub["type"] == "actual"]["spend"].sum()
+                fut = sub[sub["type"] == "projected"]["spend"].mean()
+                dow_rows.append({
+                    "Day":            d,
+                    "Actual (avg $)": f"${act:,.0f}" if act > 0 else "—",
+                    "Projected (avg $)": f"${fut:,.0f}" if not np.isnan(fut) else "—",
+                })
+            st.dataframe(pd.DataFrame(dow_rows), use_container_width=True, hide_index=True)
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# RUN MATH
-# ══════════════════════════════════════════════════════════════════════════════
-try:
-    result = run_pacing_math(df_raw, params)
-except ValueError as exc:
-    st.error(str(exc))
-    st.stop()
-
-df            = result["df"]
-model         = result["model"]
-week_scale    = result["week_scale"]
-last_date     = result["last_date"]
-ay            = result["active_year"]
-am            = result["active_month"]
-month_start   = result["month_start"]
-month_end     = result["month_end"]
-mtd_df        = result["mtd_df"]
-mtd_actual    = result["mtd_actual"]
-proj_df       = result["proj_df"]
-total_estimated = result["total_estimated"]
-prev_df       = result["prev_df"]
-pm_start      = result["prev_month_start"]
-dow_display   = result["dow_display"]
-dow_display_headers = result["dow_display_headers"]
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# DASHBOARD — Active Month + Model Status
-# ══════════════════════════════════════════════════════════════════════════════
-active_label = month_start.strftime("%B %Y")
-
-st.markdown(
-    f'<div class="month-chip">📅 Active Month: {active_label}</div>',
-    unsafe_allow_html=True,
-)
-
-if model == "adaptive_same_dow":
-    status_text = f"Adaptive DoW ★  ·  this-week ×{week_scale:.2f}  ·  lookback {lookback_weeks or 'all'} wks"
-elif model == "same_dow":
-    status_text = f"Same-DoW Avg  ·  lookback {lookback_weeks or 'all'} wks"
-else:
-    status_text = f"EMA Baseline  ·  {'weighted' if use_ewma else 'equal'} DoW"
-
-st.markdown(f'<div class="model-status">{status_text}</div>', unsafe_allow_html=True)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# DASHBOARD — Metrics
-# ══════════════════════════════════════════════════════════════════════════════
-col1, col2 = st.columns(2)
-col1.metric("MTD Actual Spend", f"${mtd_actual:,.2f}")
-col2.metric("Total Estimated Month Spend", f"${total_estimated:,.2f}")
-
-st.divider()
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# DASHBOARD — Pacing Chart
-# ══════════════════════════════════════════════════════════════════════════════
-chart_title_col, chart_ctrl_col = st.columns([3, 1])
-with chart_title_col:
-    st.subheader("Pacing Chart")
-with chart_ctrl_col:
-    st.markdown("<div style='margin-top:0.55rem;'></div>", unsafe_allow_html=True)
-    show_prev_month = st.checkbox(
-        "Compare to Previous Month",
-        value=False,
-        help="Overlay last month's actual daily spend, aligned by day-of-month",
-    )
-
-CLR_ACTUAL    = "#4f46e5"
-CLR_ACTUAL_BG = "rgba(79,70,229,0.10)"
-CLR_PROJ      = "#f59e0b"
-
-fig = go.Figure()
-
-if not mtd_df.empty:
-    fig.add_trace(go.Scatter(
-        x=mtd_df["Date"],
-        y=mtd_df["Spend"],
-        mode="lines+markers",
-        name="Actual Spend",
-        fill="tozeroy",
-        fillcolor=CLR_ACTUAL_BG,
-        line=dict(color=CLR_ACTUAL, width=2.5, shape="spline", smoothing=0.7),
-        marker=dict(size=5, color=CLR_ACTUAL, line=dict(width=1.5, color="#ffffff")),
-        hovertemplate="<b>%{x|%b %d}</b><br>Actual: <b>$%{y:,.2f}</b><extra></extra>",
-    ))
-
-if not proj_df.empty:
-    if not mtd_df.empty:
-        cx = [last_date] + proj_df["Date"].tolist()
-        cy = [float(mtd_df["Spend"].iloc[-1])] + proj_df["Projected Spend"].tolist()
-    else:
-        cx = proj_df["Date"].tolist()
-        cy = proj_df["Projected Spend"].tolist()
-
-    fig.add_trace(go.Scatter(
-        x=cx,
-        y=cy,
-        mode="lines+markers",
-        name="Projected Spend",
-        line=dict(color=CLR_PROJ, width=2.5, dash="dash"),
-        marker=dict(size=5, symbol="circle-open", color=CLR_PROJ, line=dict(width=2)),
-        hovertemplate="<b>%{x|%b %d}</b><br>Projected: <b>$%{y:,.2f}</b><extra></extra>",
-    ))
-
-if show_prev_month and not prev_df.empty:
-    max_day = month_end.day
-    prev_plot = prev_df[prev_df["DayNum"] <= max_day].copy()
-    prev_plot["PlotDate"] = prev_plot["DayNum"].apply(
-        lambda d: pd.Timestamp(ay, am, d)
-    )
-    prev_plot["ActualDateStr"] = prev_plot["Date"].dt.strftime("%b %d, %Y")
-    prev_label = pm_start.strftime("%b %Y")
-    fig.add_trace(go.Scatter(
-        x=prev_plot["PlotDate"],
-        y=prev_plot["Spend"],
-        customdata=prev_plot["ActualDateStr"],
-        mode="lines",
-        name=f"Prev. Month ({prev_label})",
-        line=dict(color="#94a3b8", width=1.5, dash="dot"),
-        opacity=0.75,
-        hovertemplate=(
-            "<b>Prev. Month — %{customdata}</b>"
-            "<br>Spend: $%{y:,.2f}<extra></extra>"
-        ),
-    ))
-
-fig.update_layout(
-    height=460,
-    margin=dict(l=0, r=0, t=72, b=0),
-    plot_bgcolor="#ffffff",
-    paper_bgcolor="#ffffff",
-    hovermode="x unified",
-    hoverlabel=dict(
-        bgcolor="#1e1b4b",
-        font_color="#ffffff",
-        font_size=13,
-        bordercolor="#1e1b4b",
-        namelength=-1,
-    ),
-    legend=dict(
-        orientation="h",
-        yanchor="bottom", y=1.02,
-        xanchor="right", x=1,
-        font=dict(size=12, color="#334155"),
-        bgcolor="rgba(255,255,255,0.85)",
-        bordercolor="rgba(0,0,0,0)",
-    ),
-    xaxis=dict(
-        title=None,
-        showgrid=False,
-        showline=False, zeroline=False,
-        tickformat="%b %d", tickangle=-30,
-        tickfont=dict(size=11, color="#64748b"),
-        range=[
-            month_start - pd.Timedelta(hours=12),
-            month_end + pd.Timedelta(hours=12),
-        ],
-    ),
-    yaxis=dict(
-        title="Daily Spend",
-        tickprefix="$", tickformat=",.0f",
-        showgrid=True, gridcolor="#ececf3", gridwidth=1,
-        showline=False, zeroline=False,
-        rangemode="tozero",
-        tickfont=dict(size=11, color="#64748b"),
-        title_font=dict(size=12, color="#94a3b8"),
-    ),
-    font=dict(family="Inter, system-ui, sans-serif"),
-)
-
-st.plotly_chart(fig, use_container_width=True)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# COLLAPSIBLE SECTIONS
-# ══════════════════════════════════════════════════════════════════════════════
-with st.expander("📐 Day-of-Week Breakdown", expanded=False):
-    h1, h2, h3 = dow_display_headers
-    table_rows = [
-        {h1: dow, h2: dow_display[dow]["col2"], h3: dow_display[dow]["col3"]}
-        for dow in DOW_ORDER
-        if dow in dow_display
-    ]
-    st.dataframe(
-        pd.DataFrame(table_rows),
-        use_container_width=False,
-        hide_index=True,
-    )
-    if model == "adaptive_same_dow":
-        st.caption(
-            f"Scale factor this week: **×{week_scale:.2f}**  ·  "
-            f"Derived from **{len(df):,}** days of history."
-        )
-    else:
-        st.caption(f"Derived from **{len(df):,}** days of history.")
-
-with st.expander("⬇ Download Projection", expanded=False):
-    if proj_df.empty:
-        st.info("No remaining days to project — the active month may already be complete.")
-    else:
-        export_df = proj_df.copy()
-        export_df["Date"] = export_df["Date"].dt.strftime("%Y-%m-%d")
-
-        filename_base = f"spend_projection_{ay}_{am:02d}"
-        csv_bytes = export_df.to_csv(index=False).encode("utf-8")
-
-        xlsx_buf = BytesIO()
-        with pd.ExcelWriter(xlsx_buf, engine="xlsxwriter") as writer:
-            export_df.to_excel(writer, index=False, sheet_name="Projection")
-            wb, ws = writer.book, writer.sheets["Projection"]
-            hdr_fmt = wb.add_format({
-                "bold": True, "bg_color": "#4f46e5", "font_color": "#ffffff", "border": 0,
-            })
-            currency_fmt = wb.add_format({"num_format": "$#,##0.00"})
-            for col_num, val in enumerate(export_df.columns):
-                ws.write(0, col_num, val, hdr_fmt)
-            ws.set_column("A:A", 13)
-            ws.set_column("B:B", 15)
-            last_col_idx = len(export_df.columns) - 1
-            ws.set_column(last_col_idx, last_col_idx, 18, currency_fmt)
-        xlsx_bytes = xlsx_buf.getvalue()
-
-        dl1, dl2 = st.columns(2)
-        with dl1:
+        # Download full projection
+        with st.expander("📥 Download Projection", expanded=False):
+            dl = proj_df[["date", "spend", "type"]].copy()
+            dl["date"] = dl["date"].dt.strftime("%Y-%m-%d")
+            dl.columns = ["Date", "Spend ($)", "Type"]
+            buf = BytesIO()
+            with pd.ExcelWriter(buf, engine="xlsxwriter") as writer:
+                dl.to_excel(writer, index=False, sheet_name="Projection")
             st.download_button(
-                "⬇ Download as CSV", csv_bytes,
-                f"{filename_base}.csv", "text/csv",
-                use_container_width=True,
+                "Download Excel",
+                data=buf.getvalue(),
+                file_name=f"projection_{model_key}_{today}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
-        with dl2:
-            st.download_button(
-                "⬇ Download as Excel (.xlsx)", xlsx_bytes,
-                f"{filename_base}.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True,
-            )
-
-with st.expander("🔍 Data Preview (last 30 rows)", expanded=False):
-    st.dataframe(
-        df[["Date", "DayOfWeek", "Spend"]]
-        .tail(30)
-        .rename(columns={"DayOfWeek": "Day of Week"}),
-        use_container_width=True,
-        hide_index=True,
-    )
+    else:
+        st.info("No spend data loaded yet. Add historical data via the sidebar.")
